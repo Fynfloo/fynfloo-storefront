@@ -1,6 +1,6 @@
 // components/sections/StockBadge.tsx
-import type { Product, StockStatus } from '@/lib/types';
-import { getStockStatus } from '@/lib/types';
+import { getStockStatus, type Product } from '@/lib/types';
+import { Badge } from '@/components/ui/Badge';
 
 interface StockBadgeProps {
   product: Product;
@@ -9,26 +9,17 @@ interface StockBadgeProps {
 
 export function StockBadge({ product, className = '' }: StockBadgeProps) {
   const status = getStockStatus(product);
-
   if (status === 'in_stock') return null;
-
   if (status === 'low_stock') {
     return (
-      <span
-        className={`inline-flex items-center px-2 py-0.5 text-xs font-medium
-          bg-amber-100 text-amber-800 rounded-[var(--radius-button)] ${className}`}
-      >
+      <Badge variant="warning" className={className}>
         Only {product.stockOnHand} left
-      </span>
+      </Badge>
     );
   }
-
   return (
-    <span
-      className={`inline-flex items-center px-2 py-0.5 text-xs font-medium
-        bg-red-100 text-red-800 rounded-[var(--radius-button)] ${className}`}
-    >
+    <Badge variant="danger" className={className}>
       Out of stock
-    </span>
+    </Badge>
   );
 }

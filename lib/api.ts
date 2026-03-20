@@ -3,21 +3,19 @@ import type { StoreData, StorePage, Product } from '@/lib/types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080';
 
-interface RequestOptions extends RequestInit {
+interface RequestOptions extends Omit<RequestInit, 'headers'> {
   slug?: string;
   cartToken?: string;
+  headers?: Record<string, string>;
+  next?: { revalidate?: number | false; tags?: string[] };
 }
 
-/**
- * Typed API client for the Fynfloo backend.
- * Automatically attaches X-Store-Slug and X-Cart-Token headers.
- */
 export async function apiFetch<T>(path: string, options: RequestOptions = {}): Promise<T> {
-  const { slug, cartToken, headers, ...rest } = options;
+  const { slug, cartToken, headers, next, ...rest } = options;
 
   const mergedHeaders: Record<string, string> = {
     'Content-Type': 'application/json',
-    ...(headers as Record<string, string>),
+    ...headers,
   };
 
   if (slug) mergedHeaders['X-Store-Slug'] = slug;
@@ -26,6 +24,8 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
   const res = await fetch(`${API_URL}${path}`, {
     ...rest,
     headers: mergedHeaders,
+    // next is a Next.js fetch extension — passed through directly
+    ...(next ? { next } : {}),
   });
 
   if (!res.ok) {
@@ -36,52 +36,38 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
   return res.json() as Promise<T>;
 }
 
-/**
- * Fetches store data by slug.
- * Used in server components to get store id and themeSettings.
- */
 export async function fetchStoreData(slug: string): Promise<StoreData | null> {
   try {
     return await apiFetch<StoreData>(`/api/storefront/stores/${slug}`, {
       next: { revalidate: 60 },
-    } as RequestOptions);
+    });
   } catch {
     return null;
   }
 }
 
-/**
- * Fetches a store page by path.
- * Used in server components to get the section layout.
- */
 export async function fetchStorePage(slug: string, path: string): Promise<StorePage | null> {
   try {
     return await apiFetch<StorePage>(`/api/storefront/pages?path=${encodeURIComponent(path)}`, {
       slug,
       next: { revalidate: 60 },
-    } as RequestOptions);
+    });
   } catch {
     return null;
   }
 }
 
-/**
- * Fetches a product by handle.
- */
 export async function fetchProduct(slug: string, handle: string): Promise<Product | null> {
   try {
     return await apiFetch<Product>(`/api/storefront/products/${handle}`, {
       slug,
       next: { revalidate: 60 },
-    } as RequestOptions);
+    });
   } catch {
     return null;
   }
 }
 
-/**
- * Fetches products, optionally filtered by collection.
- */
 export async function fetchProducts(slug: string, collection?: string | null): Promise<Product[]> {
   try {
     const path = collection
@@ -90,7 +76,7 @@ export async function fetchProducts(slug: string, collection?: string | null): P
     return await apiFetch<Product[]>(path, {
       slug,
       next: { revalidate: 60 },
-    } as RequestOptions);
+    });
   } catch {
     return [];
   }

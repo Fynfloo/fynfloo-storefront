@@ -1,25 +1,9 @@
 // app/(store)/products/page.tsx
-import { headers } from 'next/headers';
-import { notFound } from 'next/navigation';
 import { PageRenderer } from '@/components/PageRenderer';
-import { fetchStoreData, fetchStorePage } from '@/lib/api';
+import { resolveStorePage } from '@/lib/page';
 
 export default async function ProductsPage() {
-  const headersList = await headers();
-  const slug = headersList.get('x-store-slug');
+  const { store, page, slug } = await resolveStorePage('/products');
 
-  if (!slug) notFound();
-
-  const [store, page] = await Promise.all([
-    fetchStoreData(slug),
-    fetchStorePage(slug, '/products'),
-  ]);
-
-  if (!store || !page) notFound();
-
-  return (
-    <>
-      <PageRenderer sections={page.layout} context={{ storeId: store.id, slug }} />
-    </>
-  );
+  return <PageRenderer sections={page.layout} context={{ storeId: store.id, slug }} />;
 }

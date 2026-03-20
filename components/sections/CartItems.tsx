@@ -1,113 +1,47 @@
 // components/sections/CartItems.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import type { Cart, CartItem, CartItemsData } from '@/lib/types';
 import { formatPrice } from '@/lib/types';
-import { getCartToken } from '@/lib/cart';
+import { updateCartItem } from '@/lib/storefront-client';
 import { Container } from '@/components/ui/Container';
+import { Spinner } from '@/components/ui/Spinner';
 
 interface CartItemsProps {
   data: CartItemsData;
   slug: string;
+  cart: Cart | null;
+  onCartChange: (cart: Cart | null) => void;
 }
 
-export function CartItems({ data, slug }: CartItemsProps) {
+export function CartItems({ data, slug, cart, onCartChange }: CartItemsProps) {
   const { showThumbnails, showLineTotals } = data;
-  const [cart, setCart] = useState<Cart | null>(null);
-  const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchCart();
-  }, []);
-
-  async function fetchCart() {
-    try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080';
-      const cartToken = getCartToken();
-      const res = await fetch(`${apiUrl}/api/storefront/cart`, {
-        headers: {
-          'X-Store-Slug': slug,
-          ...(cartToken ? { 'X-Cart-Token': cartToken } : {}),
-        },
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setCart(data.cart);
-        if (data.cartToken) {
-          const { setCartToken } = await import('@/lib/cart');
-          setCartToken(data.cartToken);
-        }
-      }
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function updateQuantity(item: CartItem, newQuantity: number) {
-    if (newQuantity < 1) return removeItem(item);
+  async function handleQuantityChange(item: CartItem, newQuantity: number) {
     setUpdating(item.id);
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080';
-      const cartToken = getCartToken();
-      const res = await fetch(`${apiUrl}/api/storefront/cart/items`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Store-Slug': slug,
-          ...(cartToken ? { 'X-Cart-Token': cartToken } : {}),
-        },
-        body: JSON.stringify({ productId: item.productId, quantity: newQuantity }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setCart(data.cart);
-      }
+      const updated = await updateCartItem(slug, item.productId, newQuantity);
+      onCartChange(updated);
     } finally {
       setUpdating(null);
     }
   }
 
-  async function removeItem(item: CartItem) {
-    setUpdating(item.id);
-    try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080';
-      const cartToken = getCartToken();
-      const res = await fetch(`${apiUrl}/api/storefront/cart/items`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Store-Slug': slug,
-          ...(cartToken ? { 'X-Cart-Token': cartToken } : {}),
-        },
-        body: JSON.stringify({ productId: item.productId, quantity: 0 }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setCart(data.cart);
-      }
-    } finally {
-      setUpdating(null);
-    }
-  }
-
-  if (loading) {
+  if (!cart) {
     return (
       <Container>
         <div className="py-24 flex items-center justify-center">
-          <div
-            className="h-6 w-6 animate-spin rounded-full border-2
-            border-[var(--colour-primary)] border-t-transparent"
-          />
+          <Spinner size="md" />
         </div>
       </Container>
     );
   }
 
-  if (!cart?.items?.length) {
+  if (!cart.items.length) {
     return (
       <Container>
         <div className="py-24 text-center space-y-4">
@@ -116,8 +50,7 @@ export function CartItems({ data, slug }: CartItemsProps) {
           </p>
           <Link
             href="/products"
-            className="inline-flex items-center text-sm font-medium
-              text-[var(--colour-secondary)] hover:opacity-70 transition-opacity"
+            className="inline-flex items-center text-sm font-medium text-[var(--colour-secondary)] hover:opacity-70 transition-opacity"
           >
             Continue shopping →
           </Link>
@@ -135,17 +68,12 @@ export function CartItems({ data, slug }: CartItemsProps) {
         >
           Your cart
         </h1>
-
         <div className="divide-y divide-[var(--colour-primary)] divide-opacity-10">
           {cart.items.map((item) => (
             <div key={item.id} className="py-6 flex gap-4 md:gap-6">
-              {/* Thumbnail */}
               {showThumbnails && (
                 <Link href={`/products/${item.handle}`} className="flex-shrink-0">
-                  <div
-                    className="relative w-20 h-24 md:w-24 md:h-32 overflow-hidden
-                    rounded-[var(--radius-button)] bg-gray-100"
-                  >
+                  <div className="relative w-20 h-24 md:w-24 md:h-32 overflow-hidden rounded-[var(--radius-button)] bg-gray-100">
                     {item.imageUrl ? (
                       <Image
                         src={item.imageUrl}
@@ -160,72 +88,51 @@ export function CartItems({ data, slug }: CartItemsProps) {
                   </div>
                 </Link>
               )}
-
-              {/* Details */}
               <div className="flex flex-1 flex-col justify-between">
                 <div className="flex justify-between gap-4">
                   <Link
                     href={`/products/${item.handle}`}
-                    className="text-sm font-medium text-[var(--colour-primary)]
-                      hover:opacity-70 transition-opacity"
+                    className="text-sm font-medium text-[var(--colour-primary)] hover:opacity-70 transition-opacity"
                   >
                     {item.title}
                   </Link>
                   {showLineTotals && (
-                    <span
-                      className="text-sm font-semibold text-[var(--colour-primary)]
-                      whitespace-nowrap"
-                    >
+                    <span className="text-sm font-semibold text-[var(--colour-primary)] whitespace-nowrap">
                       {formatPrice(item.price * item.quantity)}
                     </span>
                   )}
                 </div>
-
                 <span className="text-xs text-[var(--colour-primary)] opacity-50">
                   {formatPrice(item.price)} each
                 </span>
-
-                {/* Quantity controls */}
                 <div className="mt-3 flex items-center justify-between">
-                  <div
-                    className="flex items-center border border-[var(--colour-primary)]
-                    border-opacity-20 rounded-[var(--radius-button)]"
-                  >
+                  <div className="flex items-center border border-[var(--colour-primary)] border-opacity-20 rounded-[var(--radius-button)]">
                     <button
-                      onClick={() => updateQuantity(item, item.quantity - 1)}
+                      onClick={() => handleQuantityChange(item, item.quantity - 1)}
                       disabled={updating === item.id}
-                      className="w-8 h-8 flex items-center justify-center
-                        text-[var(--colour-primary)] hover:opacity-60
-                        transition-opacity disabled:opacity-30"
+                      className="w-8 h-8 flex items-center justify-center text-[var(--colour-primary)] hover:opacity-60 transition-opacity disabled:opacity-30"
                     >
                       −
                     </button>
                     <span className="w-8 text-center text-sm text-[var(--colour-primary)]">
                       {updating === item.id ? (
-                        <span
-                          className="inline-block h-3 w-3 animate-spin rounded-full
-                          border border-current border-t-transparent"
-                        />
+                        <span className="inline-block h-3 w-3 animate-spin rounded-full border border-current border-t-transparent" />
                       ) : (
                         item.quantity
                       )}
                     </span>
                     <button
-                      onClick={() => updateQuantity(item, item.quantity + 1)}
+                      onClick={() => handleQuantityChange(item, item.quantity + 1)}
                       disabled={updating === item.id}
-                      className="w-8 h-8 flex items-center justify-center
-                        text-[var(--colour-primary)] hover:opacity-60
-                        transition-opacity disabled:opacity-30"
+                      className="w-8 h-8 flex items-center justify-center text-[var(--colour-primary)] hover:opacity-60 transition-opacity disabled:opacity-30"
                     >
                       +
                     </button>
                   </div>
-
                   <button
-                    onClick={() => removeItem(item)}
+                    onClick={() => handleQuantityChange(item, 0)}
                     disabled={updating === item.id}
-                    className="text-xs text-[var(--colour-primary)] opacity-40
-                      hover:opacity-70 transition-opacity disabled:opacity-20"
+                    className="text-xs text-[var(--colour-primary)] opacity-40 hover:opacity-70 transition-opacity disabled:opacity-20"
                   >
                     Remove
                   </button>

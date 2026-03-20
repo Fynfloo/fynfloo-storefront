@@ -1,8 +1,6 @@
 // app/(store)/products/[handle]/page.tsx
-import { headers } from 'next/headers';
-import { notFound } from 'next/navigation';
 import { PageRenderer } from '@/components/PageRenderer';
-import { fetchStoreData, fetchStorePage, fetchProduct } from '@/lib/api';
+import { resolveProductPage } from '@/lib/page';
 
 interface ProductPageProps {
   params: Promise<{ handle: string }>;
@@ -10,30 +8,12 @@ interface ProductPageProps {
 
 export default async function ProductPage({ params }: ProductPageProps) {
   const { handle } = await params;
-  const headersList = await headers();
-  const slug = headersList.get('x-store-slug');
-
-  if (!slug) notFound();
-
-  const [store, page, product] = await Promise.all([
-    fetchStoreData(slug),
-    fetchStorePage(slug, '/products/[handle]'),
-    fetchProduct(slug, handle),
-  ]);
-
-  if (!store || !page || !product) notFound();
+  const { store, page, slug, product } = await resolveProductPage(handle);
 
   return (
-    <>
-      <PageRenderer
-        sections={page.layout}
-        context={{
-          storeId: store.id,
-          slug,
-          product,
-          productId: product.id,
-        }}
-      />
-    </>
+    <PageRenderer
+      sections={page.layout}
+      context={{ storeId: store.id, slug, product, productId: product.id }}
+    />
   );
 }

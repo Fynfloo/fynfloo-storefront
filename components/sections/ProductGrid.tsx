@@ -6,7 +6,6 @@ import { Container } from '@/components/ui/Container';
 
 interface ProductGridProps {
   data: ProductGridData;
-  storeId: string;
   slug: string;
 }
 
@@ -16,7 +15,7 @@ const gridCols: Record<number, string> = {
   4: 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4',
 };
 
-export async function ProductGrid({ data, storeId, slug }: ProductGridProps) {
+export async function ProductGrid({ data, slug }: ProductGridProps) {
   const { heading, subheading, collectionHandle, columns = 3 } = data;
   const products: Product[] = await fetchProducts(slug, collectionHandle);
   const colClass = gridCols[columns] ?? gridCols[3];
@@ -28,8 +27,7 @@ export async function ProductGrid({ data, storeId, slug }: ProductGridProps) {
           <div className="mb-10 md:mb-14">
             {heading && (
               <h2
-                className="text-3xl md:text-4xl font-bold tracking-tight
-                  text-[var(--colour-primary)]"
+                className="text-3xl md:text-4xl font-bold tracking-tight text-[var(--colour-primary)]"
                 style={{ fontFamily: 'var(--font-display, var(--font-body))' }}
               >
                 {heading}
@@ -40,11 +38,10 @@ export async function ProductGrid({ data, storeId, slug }: ProductGridProps) {
             )}
           </div>
         )}
-
         {products.length > 0 ? (
           <div className={`grid ${colClass} gap-x-4 gap-y-10 md:gap-x-6`}>
             {products.map((product, i) => (
-              <ProductCard key={product.id} product={product} slug={slug} priority={i < 4} />
+              <ProductCard key={product.id} product={product} priority={i < 4} />
             ))}
           </div>
         ) : (

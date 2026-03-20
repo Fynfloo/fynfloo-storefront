@@ -1,5 +1,8 @@
-export { Button } from './Button';
-export { Input } from './Input';
+// components/ui/index.ts
 export { Badge } from './Badge';
-export { Spinner } from './Spinner';
+export { Button } from './Button';
 export { Container } from './Container';
+export { Footer } from './Footer';
+export { Input } from './Input';
+export { Nav } from './Nav';
+export { Spinner } from './Spinner';

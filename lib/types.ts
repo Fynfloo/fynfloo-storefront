@@ -1,4 +1,5 @@
 // lib/types.ts
+import type { ThemeSettings } from './theme';
 
 // ─── Store ────────────────────────────────────────────────────────────────────
 
@@ -12,14 +13,6 @@ export interface StoreData {
   themeSettings: ThemeSettings;
 }
 
-export interface ThemeSettings {
-  primaryColour: string;
-  secondaryColour: string;
-  fontFamily: string;
-  borderRadius: number;
-  buttonStyle: 'rounded' | 'sharp';
-}
-
 // ─── Pages ────────────────────────────────────────────────────────────────────
 
 export interface StorePage {
@@ -29,11 +22,16 @@ export interface StorePage {
   layout: Section[];
 }
 
-export interface Section {
-  id: string;
-  type: string;
-  data: Record<string, unknown>;
-}
+export type Section =
+  | { id: string; type: 'hero.basic'; data: HeroBasicData }
+  | { id: string; type: 'commerce.productGrid'; data: ProductGridData }
+  | { id: string; type: 'commerce.productHero'; data: ProductHeroData }
+  | { id: string; type: 'commerce.productSpecs'; data: ProductSpecsData }
+  | { id: string; type: 'commerce.relatedProducts'; data: RelatedProductsData }
+  | { id: string; type: 'content.textWithMedia'; data: TextWithMediaData }
+  | { id: string; type: 'content.testimonials'; data: TestimonialsData }
+  | { id: string; type: 'checkout.cartItems'; data: CartItemsData }
+  | { id: string; type: 'checkout.cartSummary'; data: CartSummaryData };
 
 // ─── Products ─────────────────────────────────────────────────────────────────
 
@@ -70,10 +68,7 @@ export function getStockStatus(product: Product): StockStatus {
 }
 
 export function formatPrice(pence: number): string {
-  return new Intl.NumberFormat('en-GB', {
-    style: 'currency',
-    currency: 'GBP',
-  }).format(pence / 100);
+  return new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(pence / 100);
 }
 
 // ─── Cart ─────────────────────────────────────────────────────────────────────
@@ -94,11 +89,6 @@ export interface Cart {
   items: CartItem[];
   subtotal: number;
   total: number;
-}
-
-export interface CartResponse {
-  cartToken: string;
-  cart: Cart;
 }
 
 // ─── Section data shapes ──────────────────────────────────────────────────────
@@ -145,10 +135,7 @@ export interface TextWithMediaData {
 
 export interface TestimonialsData {
   heading: string;
-  testimonials: {
-    quote: string;
-    name: string;
-  }[];
+  testimonials: { quote: string; name: string }[];
 }
 
 export interface CartItemsData {

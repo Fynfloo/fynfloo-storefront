@@ -1,22 +1,19 @@
 // app/(store)/cart/page.tsx
-import { headers } from 'next/headers';
-import { notFound } from 'next/navigation';
-import { PageRenderer } from '@/components/PageRenderer';
-import { fetchStoreData, fetchStorePage } from '@/lib/api';
+import { resolveStorePage, findSection } from '@/lib/page';
+import { CartPageClient } from '@/components/sections/CartPageClient';
 
 export default async function CartPage() {
-  const headersList = await headers();
-  const slug = headersList.get('x-store-slug');
+  const { page, slug } = await resolveStorePage('/cart');
 
-  if (!slug) notFound();
-
-  const [store, page] = await Promise.all([fetchStoreData(slug), fetchStorePage(slug, '/cart')]);
-
-  if (!store || !page) notFound();
+  // findSection narrows the discriminated union — data is fully typed, no cast needed
+  const cartItemsSection = findSection(page.layout, 'checkout.cartItems');
+  const cartSummarySection = findSection(page.layout, 'checkout.cartSummary');
 
   return (
-    <>
-      <PageRenderer sections={page.layout} context={{ storeId: store.id, slug }} />
-    </>
+    <CartPageClient
+      slug={slug}
+      cartItemsData={cartItemsSection?.data ?? { showThumbnails: true, showLineTotals: true }}
+      cartSummaryData={cartSummarySection?.data ?? { showDiscountCode: false }}
+    />
   );
 }
