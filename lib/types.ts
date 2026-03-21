@@ -1,4 +1,3 @@
-// lib/types.ts
 import type { ThemeSettings } from './theme';
 
 // ─── Store ────────────────────────────────────────────────────────────────────
@@ -10,6 +9,7 @@ export interface StoreData {
   domain: string | null;
   businessType: string;
   templateKey: string;
+  currency: string; // 'GBP' | 'NGN' | 'USD' | 'GHS' | 'KES' | 'ZAR' etc.
   themeSettings: ThemeSettings;
 }
 
@@ -67,8 +67,20 @@ export function getStockStatus(product: Product): StockStatus {
   return 'in_stock';
 }
 
-export function formatPrice(pence: number): string {
-  return new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(pence / 100);
+/**
+ * Formats a price in minor units (pence/kobo/cents) to a localised currency string.
+ * currency defaults to 'GBP' but should always be passed from store.currency.
+ *
+ * formatPrice(1000, 'GBP')  -> £10.00
+ * formatPrice(100000, 'NGN') -> ₦1,000.00
+ * formatPrice(1000, 'USD')  -> $10.00
+ */
+export function formatPrice(minorUnits: number, currency = 'GBP'): string {
+  return new Intl.NumberFormat('en-GB', {
+    style: 'currency',
+    currency,
+    minimumFractionDigits: 2,
+  }).format(minorUnits / 100);
 }
 
 // ─── Cart ─────────────────────────────────────────────────────────────────────

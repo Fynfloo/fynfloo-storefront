@@ -6,8 +6,11 @@ interface FooterProps {
   store: StoreData;
 }
 
+const PAYSTACK_CURRENCIES = ['NGN', 'GHS', 'KES', 'ZAR'];
+
 export function Footer({ store }: FooterProps) {
   const year = new Date().getFullYear();
+  const isPaystack = PAYSTACK_CURRENCIES.includes(store.currency);
 
   return (
     <footer
@@ -109,7 +112,7 @@ export function Footer({ store }: FooterProps) {
             © {year} {store.name}. All rights reserved.
           </p>
           <p className="text-xs text-[var(--colour-primary)] opacity-30">
-            Secure payments by Stripe
+            Secure payments by {isPaystack ? 'Paystack' : 'Stripe'}
           </p>
         </div>
       </div>
