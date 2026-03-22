@@ -7,6 +7,7 @@ import type { Order } from '@/lib/types';
 import { formatPrice } from '@/lib/types';
 import { Container } from '@/components/ui/Container';
 import { Spinner } from '@/components/ui/Spinner';
+import Link from 'next/link';
 
 function useSlug(): string {
   if (typeof window === 'undefined') return '';
@@ -79,12 +80,12 @@ export default function OrderDetailPage() {
         <Container>
           <div className="mx-auto max-w-lg text-center space-y-4">
             <p className="text-[var(--colour-primary)] opacity-50">Order not found.</p>
-            <a
+            <Link
               href="/account/orders"
               className="text-sm text-[var(--colour-secondary)] hover:opacity-70"
             >
               ← Back to orders
-            </a>
+            </Link>
           </div>
         </Container>
       </div>
@@ -97,12 +98,12 @@ export default function OrderDetailPage() {
         <div className="mx-auto max-w-2xl space-y-8">
           {/* Header */}
           <div>
-            <a
+            <Link
               href="/account/orders"
               className="text-sm text-[var(--colour-primary)] opacity-40 hover:opacity-70 transition-opacity"
             >
               ← Orders
-            </a>
+            </Link>
             <div className="flex items-center justify-between mt-4">
               <h1 className="text-2xl font-bold text-[var(--colour-primary)]">
                 Order #{order.orderNumber}

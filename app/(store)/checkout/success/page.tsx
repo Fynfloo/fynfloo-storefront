@@ -143,12 +143,12 @@ export default function CheckoutSuccessPage() {
               </div>
 
               <div className="flex flex-col sm:flex-row gap-3">
-                <a
+                <Link
                   href="/account/orders"
                   className="flex-1 text-center py-3 text-sm font-medium border border-[var(--colour-primary)] border-opacity-20 rounded-[var(--radius-button)] text-[var(--colour-primary)] hover:opacity-70 transition-opacity"
                 >
                   View all orders
-                </a>
+                </Link>
                 <Link
                   href="/products"
                   className="flex-1 text-center py-3 text-sm font-medium bg-[var(--colour-primary)] text-white rounded-[var(--radius-button)] hover:opacity-90 transition-opacity"
@@ -182,12 +182,12 @@ export default function CheckoutSuccessPage() {
               <p className="text-sm text-[var(--colour-primary)] opacity-60">
                 We could not confirm your payment. If you were charged, please contact us.
               </p>
-              <a
+              <Link
                 href="/cart"
                 className="inline-block text-sm font-medium text-[var(--colour-secondary)] hover:opacity-70 transition-opacity"
               >
                 Return to cart →
-              </a>
+              </Link>
             </div>
           )}
         </div>
