@@ -1,8 +1,9 @@
 // components/ui/Nav.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
+import { useQuery } from '@tanstack/react-query';
 import type { StoreData } from '@/lib/types';
 import { fetchCart } from '@/lib/storefront-client';
 
@@ -12,26 +13,15 @@ interface NavProps {
 }
 
 export function Nav({ store, slug }: NavProps) {
-  const [cartCount, setCartCount] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
 
-  useEffect(() => {
-    let cancelled = false;
+  const { data } = useQuery({
+    queryKey: ['cart', slug],
+    queryFn: () => fetchCart(slug),
+    staleTime: 30 * 1000,
+  });
 
-    fetchCart(slug)
-      .then((res) => {
-        if (cancelled) return;
-        const count = res?.cart.items.reduce((sum, item) => sum + item.quantity, 0) ?? 0;
-        setCartCount(count);
-      })
-      .catch(() => {
-        // silent — cart count is non-critical
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [slug]);
+  const cartCount = data?.cart.items.reduce((sum, item) => sum + item.quantity, 0) ?? 0;
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-[var(--colour-primary)] border-opacity-10 bg-[var(--colour-bg,#ffffff)] backdrop-blur-sm">

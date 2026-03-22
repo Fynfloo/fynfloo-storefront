@@ -1,4 +1,3 @@
-// app/layout.tsx
 import type { Metadata } from 'next';
 import { headers } from 'next/headers';
 import './globals.css';
@@ -6,6 +5,7 @@ import { buildThemeCSS } from '@/lib/theme';
 import { fetchStoreData } from '@/lib/api';
 import { Nav } from '@/components/ui/Nav';
 import { Footer } from '@/components/ui/Footer';
+import { Providers } from './providers';
 
 export const metadata: Metadata = {
   title: 'Store',
@@ -22,14 +22,16 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const themeCSS = buildThemeCSS(store?.themeSettings ?? {});
 
   return (
-    <html lang="en">
+    <html lang="en" data-slug={slug ?? ''} data-currency={store?.currency ?? 'GBP'}>
       <head>
         <style dangerouslySetInnerHTML={{ __html: themeCSS }} />
       </head>
       <body className="flex flex-col min-h-screen bg-[var(--colour-bg,#ffffff)]">
-        {store && slug && <Nav store={store} slug={slug} />}
-        <main className="flex-1">{children}</main>
-        {store && <Footer store={store} />}
+        <Providers>
+          {store && slug && <Nav store={store} slug={slug} />}
+          <main className="flex-1">{children}</main>
+          {store && <Footer store={store} />}
+        </Providers>
       </body>
     </html>
   );
