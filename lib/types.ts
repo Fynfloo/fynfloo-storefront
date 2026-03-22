@@ -103,6 +103,11 @@ export interface Cart {
   total: number;
 }
 
+export interface CartResponse {
+  cart: Cart;
+  cartToken?: string;
+}
+
 // ─── Section data shapes ──────────────────────────────────────────────────────
 
 export interface HeroBasicData {
@@ -157,4 +162,54 @@ export interface CartItemsData {
 
 export interface CartSummaryData {
   showDiscountCode: boolean;
+}
+
+// ─── Customer auth ────────────────────────────────────────────────────────────
+
+export interface CustomerProfile {
+  id: string;
+  email: string;
+  firstName: string | null;
+  lastName: string | null;
+  emailVerified: boolean;
+}
+
+export interface LoginResult {
+  customer: CustomerProfile;
+  next?: string;
+}
+
+export interface ApiError {
+  error: string;
+  lockedUntil?: string; // ISO date string — present on 423
+}
+
+// ─── Orders ───────────────────────────────────────────────────────────────────
+
+export interface OrderItem {
+  id: string;
+  title: string;
+  quantity: number;
+  price: number;
+  imageUrl: string | null;
+}
+
+export interface Order {
+  id: string;
+  orderNumber: number;
+  status: string;
+  fulfillmentStatus: string;
+  total: number;
+  createdAt: string;
+  items: OrderItem[];
+  shippingAddress: {
+    name: string;
+    line1: string;
+    line2: string | null;
+    city: string;
+    postcode: string;
+    country: string;
+  } | null;
+  trackingNumber: string | null;
+  trackingUrl: string | null;
 }
