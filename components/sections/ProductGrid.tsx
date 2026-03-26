@@ -1,5 +1,5 @@
 // components/sections/ProductGrid.tsx
-import type { Product, ProductGridData } from '@/lib/types';
+import type { Product, ProductGridData, StoreData } from '@/lib/types';
 import { fetchProducts } from '@/lib/api';
 import { ProductCard } from './ProductCard';
 import { Container } from '@/components/ui/Container';
@@ -7,6 +7,7 @@ import { Container } from '@/components/ui/Container';
 interface ProductGridProps {
   data: ProductGridData;
   slug: string;
+  store: StoreData; // ← add store
 }
 
 const gridCols: Record<number, string> = {
@@ -15,7 +16,7 @@ const gridCols: Record<number, string> = {
   4: 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4',
 };
 
-export async function ProductGrid({ data, slug }: ProductGridProps) {
+export async function ProductGrid({ data, slug, store }: ProductGridProps) {
   const { heading, subheading, collectionHandle, columns = 3 } = data;
   const products: Product[] = await fetchProducts(slug, collectionHandle);
   const colClass = gridCols[columns] ?? gridCols[3];
@@ -41,7 +42,12 @@ export async function ProductGrid({ data, slug }: ProductGridProps) {
         {products.length > 0 ? (
           <div className={`grid ${colClass} gap-x-4 gap-y-10 md:gap-x-6`}>
             {products.map((product, i) => (
-              <ProductCard key={product.id} product={product} priority={i < 4} />
+              <ProductCard
+                key={product.id}
+                product={product}
+                currency={store.currency} // ← pass currency
+                priority={i < 4}
+              />
             ))}
           </div>
         ) : (

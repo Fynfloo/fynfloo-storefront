@@ -13,7 +13,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
   return (
     <PageRenderer
       sections={page.layout}
-      context={{ storeId: store.id, slug, product, productId: product.id }}
+      context={{ storeId: store.id, slug, store, product, productId: product.id }}
     />
   );
 }

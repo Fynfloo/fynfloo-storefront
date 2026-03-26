@@ -7,10 +7,11 @@ import { StockBadge } from './StockBadge';
 
 interface ProductCardProps {
   product: Product;
+  currency: string; // ← add
   priority?: boolean;
 }
 
-export function ProductCard({ product, priority = false }: ProductCardProps) {
+export function ProductCard({ product, currency, priority = false }: ProductCardProps) {
   const isOutOfStock = getStockStatus(product) === 'out_of_stock';
   const primaryImage = product.images?.[0];
 
@@ -56,11 +57,11 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
         </h3>
         <div className="flex items-center gap-2">
           <span className="text-sm font-semibold text-[var(--colour-primary)]">
-            {formatPrice(product.price)}
+            {formatPrice(product.price, currency)} {/* ← pass currency */}
           </span>
           {product.compareAtPrice && product.compareAtPrice > product.price && (
             <span className="text-sm text-gray-400 line-through">
-              {formatPrice(product.compareAtPrice)}
+              {formatPrice(product.compareAtPrice, currency)} {/* ← pass currency */}
             </span>
           )}
         </div>

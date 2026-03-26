@@ -1,5 +1,5 @@
 // components/PageRenderer.tsx
-import type { Section, Product } from '@/lib/types';
+import type { Section, Product, StoreData } from '@/lib/types';
 import {
   HeroBasic,
   ProductGrid,
@@ -13,11 +13,33 @@ import {
 export interface PageContext {
   storeId: string;
   slug: string;
+  store: StoreData; // ← add
   product?: Product;
   productId?: string;
 }
 
-const DEFAULT_CONTEXT: PageContext = { storeId: '', slug: '' };
+const DEFAULT_STORE: StoreData = {
+  id: '',
+  name: '',
+  slug: '',
+  domain: null,
+  businessType: '',
+  templateKey: '',
+  currency: 'GBP',
+  themeSettings: {
+    primaryColour: '#111827',
+    secondaryColour: '#F97316',
+    fontFamily: 'Inter, sans-serif',
+    borderRadius: 6,
+    buttonStyle: 'rounded',
+  },
+};
+
+const DEFAULT_CONTEXT: PageContext = {
+  storeId: '',
+  slug: '',
+  store: DEFAULT_STORE,
+};
 
 interface PageRendererProps {
   sections: Section[];
@@ -45,11 +67,24 @@ function SectionRenderer({ section, context }: SectionRendererProps) {
       return <HeroBasic data={section.data} />;
 
     case 'commerce.productGrid':
-      return <ProductGrid data={section.data} slug={context.slug} />;
+      return (
+        <ProductGrid
+          data={section.data}
+          slug={context.slug}
+          store={context.store} // ← pass store
+        />
+      );
 
     case 'commerce.productHero':
       if (!context.product) return null;
-      return <ProductHero data={section.data} product={context.product} slug={context.slug} />;
+      return (
+        <ProductHero
+          data={section.data}
+          product={context.product}
+          slug={context.slug}
+          currency={context.store.currency} // ← pass currency
+        />
+      );
 
     case 'commerce.productSpecs':
       if (!context.product) return null;
@@ -62,6 +97,7 @@ function SectionRenderer({ section, context }: SectionRendererProps) {
           data={section.data}
           slug={context.slug}
           currentProductId={context.productId}
+          currency={context.store.currency} // ← pass currency
         />
       );
 

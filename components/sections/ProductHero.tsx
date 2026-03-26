@@ -14,9 +14,10 @@ interface ProductHeroProps {
   data: ProductHeroData;
   product: Product;
   slug: string;
+  currency: string;
 }
 
-export function ProductHero({ data, product, slug }: ProductHeroProps) {
+export function ProductHero({ data, product, slug, currency }: ProductHeroProps) {
   const { showBreadcrumbs, showBadges } = data;
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
@@ -123,11 +124,11 @@ export function ProductHero({ data, product, slug }: ProductHeroProps) {
 
             <div className="flex items-baseline gap-3">
               <span className="text-2xl font-semibold text-[var(--colour-primary)]">
-                {formatPrice(product.price)}
+                {formatPrice(product.price, currency)}
               </span>
               {product.compareAtPrice && product.compareAtPrice > product.price && (
                 <span className="text-lg text-gray-400 line-through">
-                  {formatPrice(product.compareAtPrice)}
+                  {formatPrice(product.compareAtPrice, currency)}
                 </span>
               )}
             </div>

@@ -8,9 +8,15 @@ interface RelatedProductsProps {
   data: RelatedProductsData;
   slug: string;
   currentProductId: string;
+  currency: string;
 }
 
-export async function RelatedProducts({ data, slug, currentProductId }: RelatedProductsProps) {
+export async function RelatedProducts({
+  data,
+  slug,
+  currentProductId,
+  currency,
+}: RelatedProductsProps) {
   const { heading } = data;
   const allProducts: Product[] = await fetchProducts(slug);
   const related = allProducts
@@ -33,7 +39,7 @@ export async function RelatedProducts({ data, slug, currentProductId }: RelatedP
           )}
           <div className="grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-4 md:gap-x-6">
             {related.map((product) => (
-              <ProductCard key={product.id} product={product} />
+              <ProductCard key={product.id} product={product} currency={currency} />
             ))}
           </div>
         </div>
