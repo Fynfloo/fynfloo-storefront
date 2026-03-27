@@ -1,6 +1,15 @@
 // app/(store)/cart/page.tsx
 import { resolveStorePage, findSection } from '@/lib/page';
 import { CartPageClient } from '@/components/sections/CartPageClient';
+import { Metadata } from 'next';
+
+export async function generateMetadata(): Promise<Metadata> {
+  const { store } = await resolveStorePage('/cart');
+  return {
+    title: `Your Cart — ${store.name}`,
+    openGraph: { title: `Your Cart — ${store.name}` },
+  };
+}
 
 export default async function CartPage() {
   const { page, slug } = await resolveStorePage('/cart');
