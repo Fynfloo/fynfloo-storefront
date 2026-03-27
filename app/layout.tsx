@@ -7,10 +7,17 @@ import { Nav } from '@/components/ui/Nav';
 import { Footer } from '@/components/ui/Footer';
 import { Providers } from './providers';
 
-export const metadata: Metadata = {
-  title: 'Store',
-  description: 'Powered by Fynfloo',
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const headersList = await headers();
+  const slug = headersList.get('x-store-slug');
+  const identifier = slug ?? headersList.get('x-store-domain');
+  const store = identifier ? await fetchStoreData(identifier) : null;
+
+  return {
+    title: store?.name ?? 'Store',
+    description: `Shop at ${store?.name ?? 'our store'} — powered by Fynfloo`,
+  };
+}
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const headersList = await headers();

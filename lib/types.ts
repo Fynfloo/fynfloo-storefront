@@ -53,6 +53,10 @@ export interface Product {
   stockOnHand: number | null;
   lowStockThreshold: number | null;
   images: ProductImage[];
+  metadata: {
+    metaTitle?: string | null;
+    metaDescription?: string | null;
+  } | null;
 }
 
 export type StockStatus = 'in_stock' | 'low_stock' | 'out_of_stock';
