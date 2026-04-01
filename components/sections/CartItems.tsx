@@ -14,6 +14,7 @@ interface CartItemsProps {
   cart: Cart | null;
   isLoading: boolean;
   onQuantityChange: (productId: string, quantity: number) => void;
+  onRemove: (productId: string) => void;
   isPending: boolean;
   pendingProductId: string | null;
 }
@@ -28,6 +29,7 @@ export function CartItems({
   cart,
   isLoading,
   onQuantityChange,
+  onRemove,
   isPending,
   pendingProductId,
 }: CartItemsProps) {
@@ -113,7 +115,13 @@ export function CartItems({
                   <div className="mt-3 flex items-center justify-between">
                     <div className="flex items-center border border-[var(--colour-primary)] border-opacity-20 rounded-[var(--radius-button)]">
                       <button
-                        onClick={() => onQuantityChange(item.productId, item.quantity - 1)}
+                        onClick={() => {
+                          if (item.quantity === 1) {
+                            onRemove(item.productId);
+                          } else {
+                            onQuantityChange(item.productId, item.quantity - 1);
+                          }
+                        }}
                         disabled={isUpdating}
                         className="w-8 h-8 flex items-center justify-center text-[var(--colour-primary)] hover:opacity-60 transition-opacity disabled:opacity-30"
                       >
@@ -135,7 +143,7 @@ export function CartItems({
                       </button>
                     </div>
                     <button
-                      onClick={() => onQuantityChange(item.productId, 0)}
+                      onClick={() => onRemove(item.productId)}
                       disabled={isUpdating}
                       className="text-xs text-[var(--colour-primary)] opacity-40 hover:opacity-70 transition-opacity disabled:opacity-20"
                     >

@@ -38,7 +38,8 @@ export async function fetchCart(slug: string): Promise<CartResponse | null> {
   return data;
 }
 
-export async function updateCartItem(
+// Add to cart — always POST, increments
+export async function addToCart(
   slug: string,
   productId: string,
   quantity: number,
@@ -51,6 +52,39 @@ export async function updateCartItem(
     credentials: 'include',
   });
   if (!res.ok) return null;
+  const data = await res.json();
+  if (data.cartToken) setCartToken(data.cartToken);
+  return data.cart;
+}
+
+// Update quantity — PATCH, sets exact quantity
+export async function updateCartItem(
+  slug: string,
+  productId: string,
+  quantity: number,
+): Promise<Cart> {
+  const cartToken = getCartToken();
+  const res = await fetch(`${API_URL}/api/storefront/cart/items/${productId}`, {
+    method: 'PATCH',
+    headers: buildHeaders(slug, cartToken),
+    body: JSON.stringify({ quantity }),
+    credentials: 'include',
+  });
+  if (!res.ok) throw new Error(`Failed to update cart item: ${res.status}`);
+  const data = await res.json();
+  if (data.cartToken) setCartToken(data.cartToken);
+  return data.cart;
+}
+
+// Remove item — DELETE
+export async function removeCartItem(slug: string, productId: string): Promise<Cart> {
+  const cartToken = getCartToken();
+  const res = await fetch(`${API_URL}/api/storefront/cart/items/${productId}`, {
+    method: 'DELETE',
+    headers: buildHeaders(slug, cartToken),
+    credentials: 'include',
+  });
+  if (!res.ok) throw new Error(`Failed to remove cart item: ${res.status}`);
   const data = await res.json();
   if (data.cartToken) setCartToken(data.cartToken);
   return data.cart;

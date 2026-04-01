@@ -1,14 +1,16 @@
 // components/sections/ProductHero.tsx
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import type { Product, ProductHeroData } from '@/lib/types';
-import { formatPrice, getStockStatus } from '@/lib/types';
-import { updateCartItem } from '@/lib/storefront-client';
+import { CartResponse, formatPrice, getStockStatus } from '@/lib/types';
+import { addToCart } from '@/lib/storefront-client';
 import { StockBadge } from './StockBadge';
 import { Button } from '@/components/ui/Button';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface ProductHeroProps {
   data: ProductHeroData;
@@ -27,11 +29,22 @@ export function ProductHero({ data, product, slug, currency }: ProductHeroProps)
   const images = product.images ?? [];
   const currentImage = images[selectedImage];
 
+  const router = useRouter();
+
+  const queryClient = useQueryClient();
+
   async function handleAddToCart() {
     setAdding(true);
     try {
-      const cart = await updateCartItem(slug, product.id, quantity);
-      if (cart) window.location.href = '/cart';
+      const updatedCart = await addToCart(slug, product.id, quantity);
+      if (updatedCart) {
+        // Update cache directly so Nav count reflects immediately
+        queryClient.setQueryData<CartResponse>(['cart', slug], (old) => ({
+          ...old,
+          cart: updatedCart,
+        }));
+        router.push('/cart');
+      }
     } finally {
       setAdding(false);
     }
