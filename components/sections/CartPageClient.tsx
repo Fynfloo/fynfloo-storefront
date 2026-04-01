@@ -24,6 +24,7 @@ export function CartPageClient({ slug, cartItemsData, cartSummaryData }: CartPag
 
   const cart = data?.cart ?? null;
 
+  // Recalculate totals on the client for optimistic updates, since the API doesn't return them
   function recalcTotals(
     items: CartResponse['cart']['items'],
   ): Pick<CartResponse['cart'], 'subtotal' | 'total'> {
