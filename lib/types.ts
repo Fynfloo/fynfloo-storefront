@@ -173,13 +173,15 @@ export interface CartSummaryData {
 export interface CustomerProfile {
   id: string;
   email: string;
-  firstName: string | null;
-  lastName: string | null;
+  name: string | null; // single name field — matches backend StorefrontCustomer.name
+  phone: string | null;
   emailVerified: boolean;
+  createdAt: string;
 }
 
 export interface LoginResult {
   customer: CustomerProfile;
+  sessionToken: string;
   next?: string;
 }
 
@@ -190,21 +192,20 @@ export interface ApiError {
 
 // ─── Orders ───────────────────────────────────────────────────────────────────
 
-export interface OrderItem {
-  id: string;
-  title: string;
-  quantity: number;
-  price: number;
-  imageUrl: string | null;
-}
-
+// Order summary — returned by GET /customer/orders (list)
 export interface Order {
   id: string;
   orderNumber: number;
   status: string;
-  fulfillmentStatus: string;
-  total: number;
+  fulfilmentStatus: string;
+  totalPence: number;
+  currency: string;
   createdAt: string;
+  paidAt: string | null;
+}
+
+// Order detail — returned by GET /customer/orders/:id (single)
+export interface OrderDetail extends Order {
   items: OrderItem[];
   shippingAddress: {
     name: string;
@@ -216,4 +217,13 @@ export interface Order {
   } | null;
   trackingNumber: string | null;
   trackingUrl: string | null;
+}
+
+export interface OrderItem {
+  id: string;
+  name: string; // backend uses 'name' not 'title' on OrderItem
+  sku: string | null;
+  pricePence: number;
+  quantity: number;
+  imageUrl: string | null;
 }

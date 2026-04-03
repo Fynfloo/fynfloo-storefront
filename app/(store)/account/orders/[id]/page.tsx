@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { getCustomerOrders, getCustomerProfile } from '@/lib/storefront-client';
-import type { Order } from '@/lib/types';
+import { getCustomerProfile, getCustomerOrder } from '@/lib/storefront-client';
+import type { OrderDetail } from '@/lib/types';
 import { formatPrice } from '@/lib/types';
 import { Container } from '@/components/ui/Container';
 import { Spinner } from '@/components/ui/Spinner';
@@ -43,23 +43,25 @@ export default function OrderDetailPage() {
   const slug = useSlug();
   const currency = useStoreCurrency();
 
-  const [order, setOrder] = useState<Order | null>(null);
+  const [order, setOrder] = useState<OrderDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
     if (!slug || !id) return;
+
     getCustomerProfile(slug).then((p) => {
       if (!p) {
         router.replace('/account/login?next=/account/orders');
         return;
       }
-      getCustomerOrders(slug).then((orders) => {
-        const found = orders.find((o) => o.id === id);
-        if (!found) {
+
+      // Fetch the specific order directly — no need to load all orders
+      getCustomerOrder(slug, id).then((o) => {
+        if (!o) {
           setNotFound(true);
         } else {
-          setOrder(found);
+          setOrder(o);
         }
         setLoading(false);
       });
@@ -128,13 +130,13 @@ export default function OrderDetailPage() {
               {order.items.map((item) => (
                 <div key={item.id} className="flex items-center justify-between p-4 gap-4">
                   <div>
-                    <p className="text-sm font-medium text-[var(--colour-primary)]">{item.title}</p>
+                    <p className="text-sm font-medium text-[var(--colour-primary)]">{item.name}</p>
                     <p className="text-xs text-[var(--colour-primary)] opacity-40">
-                      Qty {item.quantity} × {formatPrice(item.price, currency)}
+                      Qty {item.quantity} × {formatPrice(item.pricePence, order.currency)}
                     </p>
                   </div>
                   <span className="text-sm font-semibold text-[var(--colour-primary)] whitespace-nowrap">
-                    {formatPrice(item.price * item.quantity, currency)}
+                    {formatPrice(item.pricePence * item.quantity, order.currency)}
                   </span>
                 </div>
               ))}
@@ -142,7 +144,7 @@ export default function OrderDetailPage() {
             <div className="p-4 border-t border-[var(--colour-primary)] border-opacity-10 flex justify-between">
               <span className="text-sm font-semibold text-[var(--colour-primary)]">Total</span>
               <span className="text-sm font-semibold text-[var(--colour-primary)]">
-                {formatPrice(order.total, currency)}
+                {formatPrice(order.totalPence, order.currency)}
               </span>
             </div>
           </div>

@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { customerLogin, customerSignup } from '@/lib/storefront-client';
-import { getCartToken } from '@/lib/cart';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Container } from '@/components/ui/Container';
@@ -55,8 +54,7 @@ export default function LoginPage() {
     setLoading(true);
     setError('');
 
-    const cartToken = getCartToken();
-    const result = await customerLogin(slug, email, password, cartToken);
+    const result = await customerLogin(slug, email, password);
 
     if (result.ok) {
       router.replace(next);
@@ -66,6 +64,8 @@ export default function LoginPage() {
     if (result.status === 423 && result.error.lockedUntil) {
       setLockedUntil(new Date(result.error.lockedUntil));
       setError('Account locked due to too many failed attempts.');
+    } else if (result.status === 403) {
+      setError('Please confirm your email address before signing in. Check your inbox.');
     } else if (result.status === 401) {
       setError('Incorrect email or password.');
     } else {

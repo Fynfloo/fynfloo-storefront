@@ -128,7 +128,7 @@ export default function OrdersPage() {
                     <div className="flex items-center gap-3">
                       <StatusBadge status={order.status} />
                       <span className="text-sm font-semibold text-[var(--colour-primary)]">
-                        {formatPrice(order.total, currency)}
+                        {formatPrice(order.totalPence, order.currency || currency)}
                       </span>
                       <svg
                         className="w-4 h-4 text-[var(--colour-primary)] opacity-30"

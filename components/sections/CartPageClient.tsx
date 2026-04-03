@@ -2,8 +2,8 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import type { CartItemsData, CartSummaryData } from '@/lib/types';
-import { fetchCart, updateCartItem } from '@/lib/storefront-client';
+import type { CartItemsData, CartSummaryData, CartResponse } from '@/lib/types';
+import { fetchCart, updateCartItem, removeCartItem } from '@/lib/storefront-client';
 import { CartItems } from './CartItems';
 import { CartSummary } from './CartSummary';
 
@@ -24,16 +24,58 @@ export function CartPageClient({ slug, cartItemsData, cartSummaryData }: CartPag
 
   const cart = data?.cart ?? null;
 
-  const mutation = useMutation({
+  // Recalculate totals on the client for optimistic updates, since the API doesn't return them
+  function recalcTotals(
+    items: CartResponse['cart']['items'],
+  ): Pick<CartResponse['cart'], 'subtotal' | 'total'> {
+    const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    return { subtotal, total: subtotal };
+  }
+
+  const updateMutation = useMutation({
     mutationFn: ({ productId, quantity }: { productId: string; quantity: number }) =>
       updateCartItem(slug, productId, quantity),
-    onSuccess: () => {
+    onMutate: async ({ productId, quantity }) => {
+      await queryClient.cancelQueries({ queryKey: ['cart', slug] });
+      const previous = queryClient.getQueryData<CartResponse>(['cart', slug]);
+      queryClient.setQueryData<CartResponse>(['cart', slug], (old) => {
+        if (!old?.cart) return old;
+        const items = old.cart.items.map((item) =>
+          item.productId === productId ? { ...item, quantity } : item,
+        );
+        return { ...old, cart: { ...old.cart, items, ...recalcTotals(items) } };
+      });
+      return { previous };
+    },
+    onError: (_err, _vars, context: { previous: CartResponse | undefined } | undefined) => {
+      if (context?.previous) {
+        queryClient.setQueryData<CartResponse>(['cart', slug], context.previous);
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['cart', slug] });
     },
-    onError: (err: Error) => {
-      if (err.message.includes('409')) {
-        queryClient.invalidateQueries({ queryKey: ['cart', slug] });
+  });
+
+  const removeMutation = useMutation({
+    mutationFn: ({ productId }: { productId: string }) => removeCartItem(slug, productId),
+    onMutate: async ({ productId }) => {
+      await queryClient.cancelQueries({ queryKey: ['cart', slug] });
+      const previous = queryClient.getQueryData<CartResponse>(['cart', slug]);
+      queryClient.setQueryData<CartResponse>(['cart', slug], (old) => {
+        if (!old?.cart) return old;
+        const items = old.cart.items.filter((item) => item.productId !== productId);
+        return { ...old, cart: { ...old.cart, items, ...recalcTotals(items) } };
+      });
+      return { previous };
+    },
+    onError: (_err, _vars, context: { previous: CartResponse | undefined } | undefined) => {
+      if (context?.previous) {
+        queryClient.setQueryData<CartResponse>(['cart', slug], context.previous);
       }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['cart', slug] });
     },
   });
 
@@ -44,9 +86,12 @@ export function CartPageClient({ slug, cartItemsData, cartSummaryData }: CartPag
         slug={slug}
         cart={cart}
         isLoading={isLoading}
-        onQuantityChange={(productId, quantity) => mutation.mutate({ productId, quantity })}
-        isPending={mutation.isPending}
-        pendingProductId={mutation.variables?.productId ?? null}
+        onQuantityChange={(productId, quantity) => updateMutation.mutate({ productId, quantity })}
+        onRemove={(productId) => removeMutation.mutate({ productId })}
+        isPending={updateMutation.isPending || removeMutation.isPending}
+        pendingProductId={
+          updateMutation.variables?.productId ?? removeMutation.variables?.productId ?? null
+        }
       />
       <CartSummary data={cartSummaryData} slug={slug} cart={cart} />
     </>

@@ -21,8 +21,8 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState<CustomerProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
 
@@ -34,8 +34,8 @@ export default function ProfilePage() {
         return;
       }
       setProfile(p);
-      setFirstName(p.firstName ?? '');
-      setLastName(p.lastName ?? '');
+      setName(p.name ?? '');
+      setPhone(p.phone ?? '');
       setLoading(false);
     });
   }, [slug, router]);
@@ -45,7 +45,7 @@ export default function ProfilePage() {
     if (!slug) return;
     setSaving(true);
     setError('');
-    const updated = await updateCustomerProfile(slug, { firstName, lastName });
+    const updated = await updateCustomerProfile(slug, { name, phone });
     if (updated) {
       setProfile(updated);
       setSaved(true);
@@ -106,9 +106,16 @@ export default function ProfilePage() {
           </div>
 
           <div className="space-y-6">
-            <div className="p-4 rounded-[var(--radius-button)] bg-[var(--colour-primary)] bg-opacity-[0.03] border border-[var(--colour-primary)] border-opacity-10">
-              <p className="text-xs text-[var(--colour-primary)] opacity-50 mb-1">Email</p>
-              <p className="text-sm font-medium text-[var(--colour-primary)]">{profile?.email}</p>
+            <div
+              className="p-4 rounded-[var(--radius-button)] border border-[var(--colour-primary)] border-opacity-10"
+              style={{ background: 'color-mix(in srgb, var(--colour-primary) 4%, transparent)' }}
+            >
+              <p className="text-xs opacity-50 mb-1" style={{ color: 'var(--colour-primary)' }}>
+                Email
+              </p>
+              <p className="text-sm font-medium" style={{ color: 'var(--colour-primary)' }}>
+                {profile?.email}
+              </p>
             </div>
 
             {error && (
@@ -124,24 +131,22 @@ export default function ProfilePage() {
             )}
 
             <form onSubmit={handleSave} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <Input
-                  id="firstName"
-                  label="First name"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  placeholder="Jane"
-                  autoComplete="given-name"
-                />
-                <Input
-                  id="lastName"
-                  label="Last name"
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  placeholder="Smith"
-                  autoComplete="family-name"
-                />
-              </div>
+              <Input
+                id="name"
+                label="Full name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Jane Smith"
+                autoComplete="name"
+              />
+              <Input
+                id="phone"
+                label="Phone (optional)"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="+44 7700 900000"
+                autoComplete="tel"
+              />
               <Button type="submit" loading={saving}>
                 Save changes
               </Button>
