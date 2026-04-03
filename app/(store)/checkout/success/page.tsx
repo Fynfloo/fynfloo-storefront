@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { getOrderBySessionId } from '@/lib/storefront-client';
-import type { Order } from '@/lib/types';
+import type { OrderDetail } from '@/lib/types';
 import { formatPrice } from '@/lib/types';
 import { Container } from '@/components/ui/Container';
 import { Spinner } from '@/components/ui/Spinner';
@@ -29,7 +29,7 @@ export default function CheckoutSuccessPage() {
 
   // Derive initial status synchronously — no setState in effect body
   const [status, setStatus] = useState<Status>(() => (!sessionId ? 'failed' : 'polling'));
-  const [order, setOrder] = useState<Order | null>(null);
+  const [order, setOrder] = useState<OrderDetail | null>(null);
 
   // Use a ref for attempt count — doesn't need to trigger renders
   const attemptsRef = useRef(0);
@@ -122,14 +122,14 @@ export default function CheckoutSuccessPage() {
                     <div key={item.id} className="flex items-center justify-between p-4 gap-4">
                       <div>
                         <p className="text-sm font-medium text-[var(--colour-primary)]">
-                          {item.title}
+                          {item.name}
                         </p>
                         <p className="text-xs text-[var(--colour-primary)] opacity-40">
                           Qty {item.quantity}
                         </p>
                       </div>
                       <span className="text-sm font-semibold text-[var(--colour-primary)] whitespace-nowrap">
-                        {formatPrice(item.price * item.quantity, currency)}
+                        {formatPrice(item.pricePence * item.quantity, currency)}
                       </span>
                     </div>
                   ))}
@@ -137,7 +137,7 @@ export default function CheckoutSuccessPage() {
                 <div className="p-4 border-t border-[var(--colour-primary)] border-opacity-10 flex justify-between">
                   <span className="text-sm font-semibold text-[var(--colour-primary)]">Total</span>
                   <span className="text-sm font-semibold text-[var(--colour-primary)]">
-                    {formatPrice(order.total, currency)}
+                    {formatPrice(order.totalPence, currency)}
                   </span>
                 </div>
               </div>
