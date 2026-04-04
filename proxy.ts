@@ -10,11 +10,16 @@ const BASE_DOMAIN = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? 'fynfloo.com';
  *   my-store.fynfloo.com → X-Store-Slug: my-store
  *   www.mybrand.com      → X-Store-Domain: www.mybrand.com
  *
- * Layouts read these headers to fetch store data and inject theme.
+ * Also forwards x-pathname — used by account/layout.tsx to determine
+ * whether the current path is a public auth page (login, signup etc.)
+ * or a protected page (profile, orders) requiring an auth guard.
  */
 export function proxy(request: NextRequest) {
   const host = request.headers.get('host') ?? '';
   const requestHeaders = new Headers(request.headers);
+
+  // Always forward pathname — needed by account layout auth guard
+  requestHeaders.set('x-pathname', request.nextUrl.pathname);
 
   if (host.endsWith(`.${BASE_DOMAIN}`)) {
     // Subdomain store — extract slug
