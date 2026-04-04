@@ -30,7 +30,6 @@ export default function ProfilePage() {
     if (!slug) return;
     getCustomerProfile(slug).then((p) => {
       if (!p) {
-        router.replace('/account/login?next=/account/profile');
         return;
       }
       setProfile(p);
@@ -38,7 +37,7 @@ export default function ProfilePage() {
       setPhone(p.phone ?? '');
       setLoading(false);
     });
-  }, [slug, router]);
+  }, [slug]);
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();

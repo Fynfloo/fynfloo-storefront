@@ -1,8 +1,18 @@
 // lib/storefront-client.ts
 // Client-side API utilities — separate from lib/api.ts which is server-only.
+//
+// Two call patterns:
+//
+//   Public routes (products, cart) → browser → Express directly
+//     Uses buildPublicHeaders — includes X-Store-Slug, X-Cart-Token
+//     Uses credentials: 'include' for cart cookie
+//
+//   Auth routes (customer session, profile, orders) → browser → Next.js BFF
+//     Uses buildBFFHeaders — includes x-store-slug, x-cart-token (lowercase)
+//     Same origin — no CORS, no credentials needed
+//     Cookie is managed server-side by Next.js API routes
 
 import { getCartToken, setCartToken } from '@/lib/cart';
-import { getSessionToken, setSessionToken, clearSessionToken } from '@/lib/session';
 import type {
   Cart,
   CartResponse,
@@ -14,51 +24,44 @@ import type {
 } from '@/lib/types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080';
-const IS_DEV = process.env.NEXT_PUBLIC_ENV === 'development';
 
 // ─── Headers ─────────────────────────────────────────────────────────────────
 
 /**
- * Builds the standard headers for all storefront API requests.
- *
- * Always includes:
- *   Content-Type: application/json
- *   X-Store-Slug: <slug>          → resolveStorefront middleware
- *
- * Conditionally includes:
- *   X-Cart-Token: <token>          → resolveCart middleware
- *                                    read from cookie automatically — DRY
- *   X-Session-Token: <token>       → resolveCustomer middleware
- *                                    development only — cookie is blocked
- *                                    cross-origin on localhost
+ * Headers for public storefront routes — browser → Express directly.
+ * Cart token read from cookie — always included if present.
  */
-function buildHeaders(slug: string): Record<string, string> {
+function buildPublicHeaders(slug: string): Record<string, string> {
   const h: Record<string, string> = {
     'Content-Type': 'application/json',
     'X-Store-Slug': slug,
   };
-
-  // Always include cart token if present
   const cartToken = getCartToken();
   if (cartToken) h['X-Cart-Token'] = cartToken;
-
-  // Session token header — development only
-  // In production the httpOnly cookie is sent automatically via credentials: include
-  // In development the cookie is blocked cross-origin (localhost:3000 → localhost:8080)
-  // so we fall back to the header which the backend accepts only in development mode
-  if (IS_DEV) {
-    const sessionToken = getSessionToken();
-    if (sessionToken) h['X-Session-Token'] = sessionToken;
-  }
-
   return h;
 }
 
-// ─── Cart ─────────────────────────────────────────────────────────────────────
+/**
+ * Headers for BFF routes — browser → Next.js API routes (same origin).
+ * Lowercase header names — Next.js normalises them before forwarding.
+ * Cart token included so BFF can forward it to Express, preventing
+ * new cart creation on every authenticated page request.
+ */
+function buildBFFHeaders(slug: string): Record<string, string> {
+  const h: Record<string, string> = {
+    'Content-Type': 'application/json',
+    'x-store-slug': slug,
+  };
+  const cartToken = getCartToken();
+  if (cartToken) h['x-cart-token'] = cartToken;
+  return h;
+}
+
+// ─── Cart — browser → Express directly ───────────────────────────────────────
 
 export async function fetchCart(slug: string): Promise<CartResponse | null> {
   const res = await fetch(`${API_URL}/api/storefront/cart`, {
-    headers: buildHeaders(slug),
+    headers: buildPublicHeaders(slug),
     credentials: 'include',
   });
   if (!res.ok) return null;
@@ -74,7 +77,7 @@ export async function addToCart(
 ): Promise<Cart | null> {
   const res = await fetch(`${API_URL}/api/storefront/cart/items`, {
     method: 'POST',
-    headers: buildHeaders(slug),
+    headers: buildPublicHeaders(slug),
     body: JSON.stringify({ productId, quantity }),
     credentials: 'include',
   });
@@ -91,7 +94,7 @@ export async function updateCartItem(
 ): Promise<Cart> {
   const res = await fetch(`${API_URL}/api/storefront/cart/items/${productId}`, {
     method: 'PATCH',
-    headers: buildHeaders(slug),
+    headers: buildPublicHeaders(slug),
     body: JSON.stringify({ quantity }),
     credentials: 'include',
   });
@@ -104,7 +107,7 @@ export async function updateCartItem(
 export async function removeCartItem(slug: string, productId: string): Promise<Cart> {
   const res = await fetch(`${API_URL}/api/storefront/cart/items/${productId}`, {
     method: 'DELETE',
-    headers: buildHeaders(slug),
+    headers: buildPublicHeaders(slug),
     credentials: 'include',
   });
   if (!res.ok) throw new Error(`Failed to remove cart item: ${res.status}`);
@@ -116,7 +119,7 @@ export async function removeCartItem(slug: string, productId: string): Promise<C
 export async function initiateCheckout(slug: string): Promise<string | null> {
   const res = await fetch(`${API_URL}/api/payments/checkout`, {
     method: 'POST',
-    headers: buildHeaders(slug),
+    headers: buildPublicHeaders(slug),
     credentials: 'include',
   });
   if (!res.ok) return null;
@@ -124,33 +127,28 @@ export async function initiateCheckout(slug: string): Promise<string | null> {
   return data.url ?? null;
 }
 
+// ─── Customer auth — browser → Next.js BFF (same origin) ─────────────────────
+
 export async function checkCustomerSession(slug: string): Promise<boolean> {
-  const res = await fetch(`${API_URL}/api/storefront/customer/profile`, {
-    headers: buildHeaders(slug),
-    credentials: 'include',
+  const res = await fetch('/api/storefront/auth/session', {
+    headers: buildBFFHeaders(slug),
   });
   return res.ok;
 }
-
-// ─── Customer auth ────────────────────────────────────────────────────────────
 
 export async function customerLogin(
   slug: string,
   email: string,
   password: string,
 ): Promise<{ ok: true; data: LoginResult } | { ok: false; status: number; error: ApiError }> {
-  const res = await fetch(`${API_URL}/api/storefront/customer/login`, {
+  const res = await fetch('/api/storefront/auth/login', {
     method: 'POST',
-    headers: buildHeaders(slug),
+    headers: buildBFFHeaders(slug),
     body: JSON.stringify({ email, password }),
-    credentials: 'include',
   });
 
   if (res.ok) {
     const data = await res.json();
-    // Store session token in localStorage for dev cross-origin header auth
-    // Production uses httpOnly cookie only — token never stored in localStorage
-    if (IS_DEV && data.sessionToken) setSessionToken(data.sessionToken);
     return { ok: true, data };
   }
 
@@ -163,11 +161,10 @@ export async function customerSignup(
   email: string,
   password: string,
 ): Promise<{ ok: true } | { ok: false; status: number; error: ApiError }> {
-  const res = await fetch(`${API_URL}/api/storefront/customer/signup`, {
+  const res = await fetch('/api/storefront/auth/signup', {
     method: 'POST',
-    headers: buildHeaders(slug),
+    headers: buildBFFHeaders(slug),
     body: JSON.stringify({ email, password }),
-    credentials: 'include',
   });
 
   if (res.ok) return { ok: true };
@@ -176,13 +173,10 @@ export async function customerSignup(
 }
 
 export async function customerLogout(slug: string): Promise<void> {
-  await fetch(`${API_URL}/api/storefront/customer/logout`, {
+  await fetch('/api/storefront/auth/logout', {
     method: 'POST',
-    headers: buildHeaders(slug),
-    credentials: 'include',
+    headers: buildBFFHeaders(slug),
   });
-  // Clear local session token regardless of server response
-  if (IS_DEV) clearSessionToken();
 }
 
 export async function confirmEmail(
@@ -191,11 +185,8 @@ export async function confirmEmail(
   uid: string,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   const res = await fetch(
-    `${API_URL}/api/storefront/customer/confirm-email?token=${encodeURIComponent(token)}&uid=${encodeURIComponent(uid)}`,
-    {
-      headers: buildHeaders(slug),
-      credentials: 'include',
-    },
+    `/api/storefront/email/confirm?token=${encodeURIComponent(token)}&uid=${encodeURIComponent(uid)}`,
+    { headers: buildBFFHeaders(slug) },
   );
   if (res.ok) return { ok: true };
   const data = await res.json().catch(() => ({ error: 'Confirmation failed' }));
@@ -203,13 +194,11 @@ export async function confirmEmail(
 }
 
 export async function forgotPassword(slug: string, email: string): Promise<void> {
-  await fetch(`${API_URL}/api/storefront/customer/forgot-password`, {
+  await fetch('/api/storefront/email/forgot-password', {
     method: 'POST',
-    headers: buildHeaders(slug),
+    headers: buildBFFHeaders(slug),
     body: JSON.stringify({ email }),
-    credentials: 'include',
   });
-  // Always resolves — backend returns 200 regardless to prevent enumeration
 }
 
 export async function resetPassword(
@@ -218,11 +207,10 @@ export async function resetPassword(
   uid: string,
   password: string,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
-  const res = await fetch(`${API_URL}/api/storefront/customer/reset-password`, {
+  const res = await fetch('/api/storefront/email/reset-password', {
     method: 'POST',
-    headers: buildHeaders(slug),
+    headers: buildBFFHeaders(slug),
     body: JSON.stringify({ token, uid, newPassword: password }),
-    credentials: 'include',
   });
   if (res.ok) return { ok: true };
   const data = await res.json().catch(() => ({ error: 'Reset failed' }));
@@ -230,9 +218,8 @@ export async function resetPassword(
 }
 
 export async function getCustomerProfile(slug: string): Promise<CustomerProfile | null> {
-  const res = await fetch(`${API_URL}/api/storefront/customer/profile`, {
-    headers: buildHeaders(slug),
-    credentials: 'include',
+  const res = await fetch('/api/storefront/customer/profile', {
+    headers: buildBFFHeaders(slug),
   });
   if (!res.ok) return null;
   return res.json();
@@ -242,11 +229,10 @@ export async function updateCustomerProfile(
   slug: string,
   data: { name?: string; phone?: string },
 ): Promise<CustomerProfile | null> {
-  const res = await fetch(`${API_URL}/api/storefront/customer/profile`, {
+  const res = await fetch('/api/storefront/customer/profile', {
     method: 'PATCH',
-    headers: buildHeaders(slug),
+    headers: buildBFFHeaders(slug),
     body: JSON.stringify(data),
-    credentials: 'include',
   });
   if (!res.ok) return null;
   return res.json();
@@ -255,9 +241,8 @@ export async function updateCustomerProfile(
 // ─── Orders ───────────────────────────────────────────────────────────────────
 
 export async function getCustomerOrders(slug: string): Promise<Order[]> {
-  const res = await fetch(`${API_URL}/api/storefront/customer/orders`, {
-    headers: buildHeaders(slug),
-    credentials: 'include',
+  const res = await fetch('/api/storefront/customer/orders', {
+    headers: buildBFFHeaders(slug),
   });
   if (!res.ok) return [];
   const data = await res.json();
@@ -265,9 +250,8 @@ export async function getCustomerOrders(slug: string): Promise<Order[]> {
 }
 
 export async function getCustomerOrder(slug: string, orderId: string): Promise<OrderDetail | null> {
-  const res = await fetch(`${API_URL}/api/storefront/customer/orders/${orderId}`, {
-    headers: buildHeaders(slug),
-    credentials: 'include',
+  const res = await fetch(`/api/storefront/customer/orders/${orderId}`, {
+    headers: buildBFFHeaders(slug),
   });
   if (!res.ok) return null;
   return res.json();
@@ -278,11 +262,8 @@ export async function getOrderBySessionId(
   sessionId: string,
 ): Promise<OrderDetail | null> {
   const res = await fetch(
-    `${API_URL}/api/storefront/customer/orders/by-session?sessionId=${encodeURIComponent(sessionId)}`,
-    {
-      headers: buildHeaders(slug),
-      credentials: 'include',
-    },
+    `/api/storefront/customer/orders/by-session?sessionId=${encodeURIComponent(sessionId)}`,
+    { headers: buildBFFHeaders(slug) },
   );
   if (!res.ok) return null;
   return res.json();

@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { customerSignup } from '@/lib/storefront-client';
+import { useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { checkCustomerSession, customerSignup } from '@/lib/storefront-client';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Container } from '@/components/ui/Container';
+import { Spinner } from '@/components/ui/Spinner';
 
 function useSlug(): string {
   if (typeof window === 'undefined') return '';
@@ -14,12 +15,26 @@ function useSlug(): string {
 
 export default function SignupPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const slug = useSlug();
+  const next = searchParams.get('next') ?? '/account/orders';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [done, setDone] = useState(false);
+  const [checking, setChecking] = useState(true);
+
+  useEffect(() => {
+    if (!slug) return;
+    checkCustomerSession(slug).then((authenticated) => {
+      if (authenticated) {
+        router.replace(next);
+      } else {
+        setChecking(false);
+      }
+    });
+  }, [slug, next, router]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -37,6 +52,14 @@ export default function SignupPage() {
       setError(result.error.error ?? 'Something went wrong. Please try again.');
     }
     setLoading(false);
+  }
+
+  if (checking) {
+    return (
+      <div className="py-24 flex items-center justify-center">
+        <Spinner size="lg" />
+      </div>
+    );
   }
 
   if (done) {

@@ -37,7 +37,6 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 export default function OrdersPage() {
-  const router = useRouter();
   const slug = useSlug();
   const currency = useStoreCurrency();
   const [orders, setOrders] = useState<Order[]>([]);
@@ -45,17 +44,12 @@ export default function OrdersPage() {
 
   useEffect(() => {
     if (!slug) return;
-    getCustomerProfile(slug).then((p) => {
-      if (!p) {
-        router.replace('/account/login?next=/account/orders');
-        return;
-      }
-      getCustomerOrders(slug).then((o) => {
-        setOrders(o);
-        setLoading(false);
-      });
+
+    getCustomerOrders(slug).then((o) => {
+      setOrders(o);
+      setLoading(false);
     });
-  }, [slug, router]);
+  }, [slug]);
 
   if (loading) {
     return (

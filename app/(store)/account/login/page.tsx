@@ -2,10 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { customerLogin, customerSignup } from '@/lib/storefront-client';
+import { checkCustomerSession, customerLogin, customerSignup } from '@/lib/storefront-client';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Container } from '@/components/ui/Container';
+import { Spinner } from '@/components/ui/Spinner';
 
 // We read slug from a data attribute set on the body by layout
 function useSlug(): string {
@@ -28,9 +29,21 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [lockedUntil, setLockedUntil] = useState<Date | null>(null);
   const [successMessage, setSuccessMessage] = useState('');
-
+  const [checking, setChecking] = useState(true);
   // Countdown timer for locked account
   const [timeRemaining, setTimeRemaining] = useState('');
+
+  useEffect(() => {
+    if (!slug) return;
+    checkCustomerSession(slug).then((authenticated) => {
+      if (authenticated) {
+        router.replace(next);
+      } else {
+        setChecking(false);
+      }
+    });
+  }, [slug, next, router]);
+
   useEffect(() => {
     if (!lockedUntil) return;
     const interval = setInterval(() => {
@@ -94,6 +107,14 @@ export default function LoginPage() {
       setError(result.error.error ?? 'Something went wrong. Please try again.');
     }
     setLoading(false);
+  }
+
+  if (checking) {
+    return (
+      <div className="py-24 flex items-center justify-center">
+        <Spinner size="lg" />
+      </div>
+    );
   }
 
   return (
