@@ -1,3 +1,4 @@
+// lib/types.ts
 import type { ThemeSettings } from './theme';
 
 // ─── Store ────────────────────────────────────────────────────────────────────
@@ -9,7 +10,7 @@ export interface StoreData {
   domain: string | null;
   businessType: string;
   templateKey: string;
-  currency: string; // 'GBP' | 'NGN' | 'USD' | 'GHS' | 'KES' | 'ZAR' etc.
+  currency: string;
   themeSettings: ThemeSettings;
 }
 
@@ -41,18 +42,47 @@ export interface ProductImage {
   position: number;
 }
 
+// One option axis — e.g. { id, name: "Size", values: ["S","M","L"], position: 0 }
+export interface ProductOption {
+  id: string;
+  name: string;
+  values: string[];
+  position: number;
+}
+
+// One variant combination — e.g. S / Black
+export interface ProductVariant {
+  id: string;
+  title: string; // "S / Black" — auto-generated
+  sku: string | null;
+  price: number; // minor units — overrides product.price at checkout
+  compareAtPrice: number | null;
+  options: Record<string, string>; // { "Size": "S", "Colour": "Black" }
+  trackQuantity: boolean;
+  onHand: number | null;
+  lowStockThreshold: number | null;
+  allowOversell: boolean;
+  position: number;
+}
+
+export type ProductType = 'PHYSICAL' | 'DIGITAL' | 'SERVICE';
+
 export interface Product {
   id: string;
   title: string;
   handle: string;
   description: string | null;
-  price: number;
+  price: number; // base price — used when no variants
   compareAtPrice: number | null;
   status: 'DRAFT' | 'ACTIVE' | 'ARCHIVED';
+  productType: ProductType; // ← added — controls UI behaviour
   trackStock: boolean;
   stockOnHand: number | null;
   lowStockThreshold: number | null;
+  allowOversell: boolean; // ← added — needed for stock checks
   images: ProductImage[];
+  options: ProductOption[]; // ← added — empty array when no variants
+  variants: ProductVariant[]; // ← added — empty array when no variants
   metadata: {
     metaTitle?: string | null;
     metaDescription?: string | null;
@@ -61,6 +91,10 @@ export interface Product {
 
 export type StockStatus = 'in_stock' | 'low_stock' | 'out_of_stock';
 
+/**
+ * Derives stock status from a product with no variant selected.
+ * When a variant is selected, use getVariantStockStatus instead.
+ */
 export function getStockStatus(product: Product): StockStatus {
   if (!product.trackStock) return 'in_stock';
   if (product.stockOnHand === null) return 'in_stock';
@@ -72,12 +106,26 @@ export function getStockStatus(product: Product): StockStatus {
 }
 
 /**
+ * Derives stock status from a selected variant.
+ * Called when customer has selected a variant combination.
+ */
+export function getVariantStockStatus(variant: ProductVariant): StockStatus {
+  if (!variant.trackQuantity) return 'in_stock';
+  if (variant.onHand === null) return 'in_stock';
+  if (variant.onHand <= 0) return 'out_of_stock';
+  if (variant.lowStockThreshold !== null && variant.onHand <= variant.lowStockThreshold) {
+    return 'low_stock';
+  }
+  return 'in_stock';
+}
+
+/**
  * Formats a price in minor units (pence/kobo/cents) to a localised currency string.
  * currency defaults to 'GBP' but should always be passed from store.currency.
  *
- * formatPrice(1000, 'GBP')  -> £10.00
+ * formatPrice(1000, 'GBP')   -> £10.00
  * formatPrice(100000, 'NGN') -> ₦1,000.00
- * formatPrice(1000, 'USD')  -> $10.00
+ * formatPrice(1000, 'USD')   -> $10.00
  */
 export function formatPrice(minorUnits: number, currency = 'GBP'): string {
   return new Intl.NumberFormat('en-GB', {
@@ -92,9 +140,11 @@ export function formatPrice(minorUnits: number, currency = 'GBP'): string {
 export interface CartItem {
   id: string;
   productId: string;
+  variantId: string | null; // ← added — null for products without variants
+  variantTitle: string | null; // ← added — e.g. "S / Black", null if no variant
   title: string;
   handle: string;
-  price: number;
+  price: number; // variant price when variantId present, else product price
   quantity: number;
   imageUrl: string | null;
   imageAlt: string | null;
@@ -173,7 +223,7 @@ export interface CartSummaryData {
 export interface CustomerProfile {
   id: string;
   email: string;
-  name: string | null; // single name field — matches backend StorefrontCustomer.name
+  name: string | null;
   phone: string | null;
   emailVerified: boolean;
   createdAt: string;
@@ -187,12 +237,11 @@ export interface LoginResult {
 
 export interface ApiError {
   error: string;
-  lockedUntil?: string; // ISO date string — present on 423
+  lockedUntil?: string;
 }
 
 // ─── Orders ───────────────────────────────────────────────────────────────────
 
-// Order summary — returned by GET /customer/orders (list)
 export interface Order {
   id: string;
   orderNumber: number;
@@ -204,7 +253,6 @@ export interface Order {
   paidAt: string | null;
 }
 
-// Order detail — returned by GET /customer/orders/:id (single)
 export interface OrderDetail extends Order {
   items: OrderItem[];
   shippingAddress: {
@@ -221,7 +269,7 @@ export interface OrderDetail extends Order {
 
 export interface OrderItem {
   id: string;
-  name: string; // backend uses 'name' not 'title' on OrderItem
+  name: string;
   sku: string | null;
   pricePence: number;
   quantity: number;
