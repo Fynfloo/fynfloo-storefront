@@ -70,15 +70,21 @@ export async function fetchCart(slug: string): Promise<CartResponse | null> {
   return data;
 }
 
+/**
+ * Adds a product to the cart.
+ * variantId is required when the product has variants — backend enforces this.
+ * Passing null explicitly for products without variants.
+ */
 export async function addToCart(
   slug: string,
   productId: string,
   quantity: number,
+  variantId?: string | null, // ← added
 ): Promise<Cart | null> {
   const res = await fetch(`${API_URL}/api/storefront/cart/items`, {
     method: 'POST',
     headers: buildPublicHeaders(slug),
-    body: JSON.stringify({ productId, quantity }),
+    body: JSON.stringify({ productId, quantity, variantId: variantId ?? null }), // ← added
     credentials: 'include',
   });
   if (!res.ok) return null;
@@ -87,15 +93,21 @@ export async function addToCart(
   return data.cart;
 }
 
+/**
+ * Updates quantity of a specific cart item.
+ * variantId must match the one used when the item was added — backend scopes
+ * the update to the [productId, variantId] combination.
+ */
 export async function updateCartItem(
   slug: string,
   productId: string,
   quantity: number,
+  variantId?: string | null, // ← added
 ): Promise<Cart> {
   const res = await fetch(`${API_URL}/api/storefront/cart/items/${productId}`, {
     method: 'PATCH',
     headers: buildPublicHeaders(slug),
-    body: JSON.stringify({ quantity }),
+    body: JSON.stringify({ quantity, variantId: variantId ?? null }), // ← added
     credentials: 'include',
   });
   if (!res.ok) throw new Error(`Failed to update cart item: ${res.status}`);
@@ -104,10 +116,21 @@ export async function updateCartItem(
   return data.cart;
 }
 
-export async function removeCartItem(slug: string, productId: string): Promise<Cart> {
+/**
+ * Removes a specific cart item.
+ * variantId must match the one used when the item was added — backend scopes
+ * the delete to the [productId, variantId] combination.
+ * Body is required on DELETE so the backend knows which variant to remove.
+ */
+export async function removeCartItem(
+  slug: string,
+  productId: string,
+  variantId?: string | null, // ← added
+): Promise<Cart> {
   const res = await fetch(`${API_URL}/api/storefront/cart/items/${productId}`, {
     method: 'DELETE',
     headers: buildPublicHeaders(slug),
+    body: JSON.stringify({ variantId: variantId ?? null }), // ← added
     credentials: 'include',
   });
   if (!res.ok) throw new Error(`Failed to remove cart item: ${res.status}`);

@@ -13,10 +13,11 @@ interface CartItemsProps {
   slug: string;
   cart: Cart | null;
   isLoading: boolean;
-  onQuantityChange: (productId: string, quantity: number) => void;
-  onRemove: (productId: string) => void;
+  // ← variantId added to both callbacks
+  onQuantityChange: (productId: string, quantity: number, variantId: string | null) => void;
+  onRemove: (productId: string, variantId: string | null) => void;
   isPending: boolean;
-  pendingProductId: string | null;
+  pendingItemId: string | null; // ← renamed from pendingProductId, scoped by productId:variantId
 }
 
 function useStoreCurrency(): string {
@@ -31,7 +32,7 @@ export function CartItems({
   onQuantityChange,
   onRemove,
   isPending,
-  pendingProductId,
+  pendingItemId,
 }: CartItemsProps) {
   const { showThumbnails, showLineTotals } = data;
   const currency = useStoreCurrency();
@@ -75,7 +76,11 @@ export function CartItems({
         </h1>
         <div className="divide-y divide-[var(--colour-primary)] divide-opacity-10">
           {cart.items.map((item: CartItem) => {
-            const isUpdating = isPending && pendingProductId === item.productId;
+            // ← scope pending state by productId + variantId so two variants
+            // of the same product don't both show as loading simultaneously
+            const itemKey = `${item.productId}:${item.variantId ?? ''}`;
+            const isUpdating = isPending && pendingItemId === itemKey;
+
             return (
               <div key={item.id} className="py-6 flex gap-4 md:gap-6">
                 {showThumbnails && (
@@ -97,12 +102,23 @@ export function CartItems({
                 )}
                 <div className="flex flex-1 flex-col justify-between">
                   <div className="flex justify-between gap-4">
-                    <Link
-                      href={`/products/${item.handle}`}
-                      className="text-sm font-medium text-[var(--colour-primary)] hover:opacity-70 transition-opacity"
-                    >
-                      {item.title}
-                    </Link>
+                    <div className="space-y-0.5">
+                      <Link
+                        href={`/products/${item.handle}`}
+                        className="text-sm font-medium text-[var(--colour-primary)] hover:opacity-70 transition-opacity"
+                      >
+                        {item.title}
+                      </Link>
+                      {/* ← variant title shown as subtitle e.g. "S / Black" */}
+                      {item.variantTitle && (
+                        <p
+                          className="text-xs"
+                          style={{ color: 'var(--colour-primary)', opacity: 0.5 }}
+                        >
+                          {item.variantTitle}
+                        </p>
+                      )}
+                    </div>
                     {showLineTotals && (
                       <span className="text-sm font-semibold text-[var(--colour-primary)] whitespace-nowrap">
                         {formatPrice(item.price * item.quantity, currency)}
@@ -117,9 +133,9 @@ export function CartItems({
                       <button
                         onClick={() => {
                           if (item.quantity === 1) {
-                            onRemove(item.productId);
+                            onRemove(item.productId, item.variantId); // ← pass variantId
                           } else {
-                            onQuantityChange(item.productId, item.quantity - 1);
+                            onQuantityChange(item.productId, item.quantity - 1, item.variantId); // ← pass variantId
                           }
                         }}
                         disabled={isUpdating}
@@ -135,7 +151,9 @@ export function CartItems({
                         )}
                       </span>
                       <button
-                        onClick={() => onQuantityChange(item.productId, item.quantity + 1)}
+                        onClick={
+                          () => onQuantityChange(item.productId, item.quantity + 1, item.variantId) // ← pass variantId
+                        }
                         disabled={isUpdating}
                         className="w-8 h-8 flex items-center justify-center text-[var(--colour-primary)] hover:opacity-60 transition-opacity disabled:opacity-30"
                       >
@@ -143,7 +161,7 @@ export function CartItems({
                       </button>
                     </div>
                     <button
-                      onClick={() => onRemove(item.productId)}
+                      onClick={() => onRemove(item.productId, item.variantId)} // ← pass variantId
                       disabled={isUpdating}
                       className="text-xs text-[var(--colour-primary)] opacity-40 hover:opacity-70 transition-opacity disabled:opacity-20"
                     >
