@@ -26,9 +26,10 @@ export function CartPageClient({ slug, cartItemsData, cartSummaryData }: CartPag
 
   function recalcTotals(
     items: CartResponse['cart']['items'],
+    discountAmount: number = 0,
   ): Pick<CartResponse['cart'], 'subtotal' | 'total'> {
     const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-    return { subtotal, total: subtotal };
+    return { subtotal, total: Math.max(0, subtotal - discountAmount) };
   }
 
   // ── Update quantity ──────────────────────────────────────────────────────────
@@ -54,7 +55,10 @@ export function CartPageClient({ slug, cartItemsData, cartSummaryData }: CartPag
             ? { ...item, quantity }
             : item,
         );
-        return { ...old, cart: { ...old.cart, items, ...recalcTotals(items) } };
+        return {
+          ...old,
+          cart: { ...old.cart, items, ...recalcTotals(items, old.cart.discountAmount) },
+        };
       });
       return { previous };
     },
@@ -87,7 +91,10 @@ export function CartPageClient({ slug, cartItemsData, cartSummaryData }: CartPag
         const items = old.cart.items.filter(
           (item) => !(item.productId === productId && item.variantId === variantId),
         );
-        return { ...old, cart: { ...old.cart, items, ...recalcTotals(items) } };
+        return {
+          ...old,
+          cart: { ...old.cart, items, ...recalcTotals(items, old.cart.discountAmount) },
+        };
       });
       return { previous };
     },
