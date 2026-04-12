@@ -139,6 +139,43 @@ export async function removeCartItem(
   return data.cart;
 }
 
+/**
+ * Applies a discount code to the cart.
+ * Returns the updated cart on success.
+ * Throws with error message on invalid/expired/limit reached.
+ */
+export async function applyDiscount(slug: string, code: string): Promise<Cart> {
+  const res = await fetch(`${API_URL}/api/storefront/cart/discount`, {
+    method: 'POST',
+    headers: buildPublicHeaders(slug),
+    body: JSON.stringify({ code }),
+    credentials: 'include',
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({ error: 'Invalid discount code' }));
+    throw new Error(data.error ?? 'Invalid discount code');
+  }
+  const data = await res.json();
+  if (data.cartToken) setCartToken(data.cartToken);
+  return data.cart;
+}
+
+/**
+ * Removes the applied discount code from the cart.
+ * Idempotent — safe to call even if no discount is applied.
+ */
+export async function removeDiscount(slug: string): Promise<Cart> {
+  const res = await fetch(`${API_URL}/api/storefront/cart/discount`, {
+    method: 'DELETE',
+    headers: buildPublicHeaders(slug),
+    credentials: 'include',
+  });
+  if (!res.ok) throw new Error('Failed to remove discount');
+  const data = await res.json();
+  if (data.cartToken) setCartToken(data.cartToken);
+  return data.cart;
+}
+
 export async function initiateCheckout(slug: string): Promise<string | null> {
   const res = await fetch(`${API_URL}/api/payments/checkout`, {
     method: 'POST',

@@ -154,6 +154,8 @@ export interface Cart {
   id: string;
   items: CartItem[];
   subtotal: number;
+  discountCode: string | null;
+  discountAmount: number;
   total: number;
 }
 

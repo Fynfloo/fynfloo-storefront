@@ -22,7 +22,7 @@ export default async function CartPage() {
     <CartPageClient
       slug={slug}
       cartItemsData={cartItemsSection?.data ?? { showThumbnails: true, showLineTotals: true }}
-      cartSummaryData={cartSummarySection?.data ?? { showDiscountCode: false }}
+      cartSummaryData={cartSummarySection?.data ?? { showDiscountCode: true }}
     />
   );
 }
