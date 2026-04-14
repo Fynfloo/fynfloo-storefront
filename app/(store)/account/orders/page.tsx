@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { getCustomerOrders, getCustomerProfile } from '@/lib/storefront-client';
+import { getCustomerOrders } from '@/lib/storefront-client';
 import type { Order } from '@/lib/types';
 import { formatPrice } from '@/lib/types';
 import { Container } from '@/components/ui/Container';
