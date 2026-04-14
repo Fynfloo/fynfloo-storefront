@@ -267,6 +267,8 @@ export interface OrderDetail extends Order {
   } | null;
   trackingNumber: string | null;
   trackingUrl: string | null;
+  courierName: string | null;
+  fulfilledAt: string | null;
 }
 
 export interface OrderItem {

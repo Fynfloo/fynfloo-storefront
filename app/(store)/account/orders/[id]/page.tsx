@@ -14,11 +14,6 @@ function useSlug(): string {
   return document.documentElement.dataset.slug ?? '';
 }
 
-function useStoreCurrency(): string {
-  if (typeof window === 'undefined') return 'GBP';
-  return document.documentElement.dataset.currency ?? 'GBP';
-}
-
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, string> = {
     PAID: 'bg-green-100 text-green-700',
@@ -26,12 +21,14 @@ function StatusBadge({ status }: { status: string }) {
     FAILED: 'bg-red-100 text-red-700',
     FULFILLED: 'bg-blue-100 text-blue-700',
     CANCELLED: 'bg-gray-100 text-gray-600',
+    REFUNDED: 'bg-orange-100 text-orange-700',
+    PARTIALLY_REFUNDED: 'bg-orange-100 text-orange-700',
   };
   return (
     <span
       className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${map[status] ?? 'bg-gray-100 text-gray-600'}`}
     >
-      {status.charAt(0) + status.slice(1).toLowerCase()}
+      {status.charAt(0) + status.slice(1).toLowerCase().replace(/_/g, ' ')}
     </span>
   );
 }
@@ -41,7 +38,6 @@ export default function OrderDetailPage() {
   const params = useParams();
   const id = params.id as string;
   const slug = useSlug();
-  const currency = useStoreCurrency();
 
   const [order, setOrder] = useState<OrderDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -56,7 +52,6 @@ export default function OrderDetailPage() {
         return;
       }
 
-      // Fetch the specific order directly — no need to load all orders
       getCustomerOrder(slug, id).then((o) => {
         if (!o) {
           setNotFound(true);
@@ -94,6 +89,8 @@ export default function OrderDetailPage() {
     );
   }
 
+  const isDispatched = order.fulfilmentStatus === 'FULFILLED';
+
   return (
     <div className="py-16 md:py-24">
       <Container>
@@ -120,6 +117,53 @@ export default function OrderDetailPage() {
               })}
             </p>
           </div>
+
+          {/* Dispatch banner */}
+          {isDispatched ? (
+            <div className="flex items-start gap-3 rounded-[var(--radius-button)] border border-green-200 bg-green-50 p-4">
+              <svg
+                className="w-5 h-5 text-green-600 shrink-0 mt-0.5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M5 13l4 4L19 7"
+                />
+              </svg>
+              <div>
+                <p className="text-sm font-semibold text-green-800">
+                  Your order has been dispatched
+                </p>
+                <p className="text-xs text-green-700 mt-0.5 opacity-80">
+                  It is on its way to you.
+                  {order.courierName ? ` Courier: ${order.courierName}.` : ''}
+                </p>
+              </div>
+            </div>
+          ) : order.status === 'PAID' ? (
+            <div className="flex items-start gap-3 rounded-[var(--radius-button)] border border-[var(--colour-primary)] border-opacity-10 bg-[var(--colour-primary)] bg-opacity-5 p-4">
+              <svg
+                className="w-5 h-5 text-[var(--colour-primary)] opacity-40 shrink-0 mt-0.5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              <p className="text-sm text-[var(--colour-primary)] opacity-60">
+                Your order is being prepared
+              </p>
+            </div>
+          ) : null}
 
           {/* Items */}
           <div className="border border-[var(--colour-primary)] border-opacity-10 rounded-[var(--radius-button)] overflow-hidden">
@@ -179,10 +223,23 @@ export default function OrderDetailPage() {
           {order.trackingNumber && (
             <div className="border border-[var(--colour-primary)] border-opacity-10 rounded-[var(--radius-button)] p-4">
               <h2 className="text-sm font-semibold text-[var(--colour-primary)] mb-3">Tracking</h2>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-[var(--colour-primary)] opacity-70 font-mono">
-                  {order.trackingNumber}
-                </span>
+              <div className="space-y-2">
+                {order.courierName && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-[var(--colour-primary)] opacity-50">Courier</span>
+                    <span className="text-sm text-[var(--colour-primary)] opacity-70">
+                      {order.courierName}
+                    </span>
+                  </div>
+                )}
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-[var(--colour-primary)] opacity-50">
+                    Tracking number
+                  </span>
+                  <span className="text-sm text-[var(--colour-primary)] opacity-70 font-mono">
+                    {order.trackingNumber}
+                  </span>
+                </div>
                 {order.trackingUrl && (
                   <a
                     href={order.trackingUrl}
