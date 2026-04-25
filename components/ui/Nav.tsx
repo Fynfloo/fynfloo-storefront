@@ -1,8 +1,8 @@
-// components/ui/Nav.tsx
 'use client';
 
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useQuery } from '@tanstack/react-query';
 import type { StoreData } from '@/lib/types';
 import { fetchCart } from '@/lib/storefront-client';
@@ -27,13 +27,29 @@ export function Nav({ store, slug }: NavProps) {
     <header className="sticky top-0 z-50 w-full border-b border-[var(--colour-primary)] border-opacity-10 bg-[var(--colour-bg,#ffffff)] backdrop-blur-sm">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
-          {/* Logo */}
+          {/* Logo / store name */}
           <Link
             href="/"
-            className="text-lg font-bold tracking-tight text-[var(--colour-primary)] hover:opacity-70 transition-opacity"
-            style={{ fontFamily: 'var(--font-display, var(--font-body))' }}
+            className="flex items-center hover:opacity-70 transition-opacity"
+            aria-label={store.name}
           >
-            {store.name}
+            {store.logoUrl ? (
+              <Image
+                src={store.logoUrl}
+                alt={store.name}
+                width={120}
+                height={40}
+                className="h-8 w-auto object-contain"
+                priority
+              />
+            ) : (
+              <span
+                className="text-lg font-bold tracking-tight text-[var(--colour-primary)]"
+                style={{ fontFamily: 'var(--font-display, var(--font-body))' }}
+              >
+                {store.name}
+              </span>
+            )}
           </Link>
 
           {/* Desktop nav */}
