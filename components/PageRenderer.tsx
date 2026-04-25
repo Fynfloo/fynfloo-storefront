@@ -26,6 +26,8 @@ const DEFAULT_STORE: StoreData = {
   businessType: '',
   templateKey: '',
   currency: 'GBP',
+  logoUrl: null,
+  status: 'ACTIVE',
   themeSettings: {
     primaryColour: '#111827',
     secondaryColour: '#F97316',

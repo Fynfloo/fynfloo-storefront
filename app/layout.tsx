@@ -6,6 +6,7 @@ import { fetchStoreData } from '@/lib/api';
 import { Nav } from '@/components/ui/Nav';
 import { Footer } from '@/components/ui/Footer';
 import { Providers } from './providers';
+import { redirect } from 'next/navigation';
 
 export async function generateMetadata(): Promise<Metadata> {
   const headersList = await headers();
@@ -26,7 +27,18 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
   const identifier = slug ?? domain;
   const store = identifier ? await fetchStoreData(identifier) : null;
+
+  // Store is offline — redirect all pages to coming soon.
+  // Excludes /coming-soon itself to prevent redirect loop.
+  const pathname = headersList.get('x-pathname') ?? '';
+  const isInactive = store?.status === 'INACTIVE';
+
+  if (isInactive && pathname !== '/coming-soon') {
+    redirect('/coming-soon');
+  }
+
   const themeCSS = buildThemeCSS(store?.themeSettings ?? {});
+  const showChrome = store && slug && !isInactive;
 
   return (
     <html lang="en" data-slug={slug ?? ''} data-currency={store?.currency ?? 'GBP'}>
@@ -35,9 +47,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       </head>
       <body className="flex flex-col min-h-screen bg-[var(--colour-bg,#ffffff)]">
         <Providers>
-          {store && slug && <Nav store={store} slug={slug} />}
+          {showChrome && <Nav store={store} slug={slug} />}
           <main className="flex-1">{children}</main>
-          {store && <Footer store={store} />}
+          {showChrome && <Footer store={store} />}
         </Providers>
       </body>
     </html>

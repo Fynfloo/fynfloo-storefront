@@ -11,6 +11,8 @@ export interface StoreData {
   businessType: string;
   templateKey: string;
   currency: string;
+  status: 'ONBOARDING' | 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'DEACTIVATED';
+  logoUrl: string | null;
   themeSettings: ThemeSettings;
 }
 

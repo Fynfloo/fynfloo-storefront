@@ -1,5 +1,6 @@
 // components/ui/Footer.tsx
 import Link from 'next/link';
+import Image from 'next/image';
 import type { StoreData } from '@/lib/types';
 
 interface FooterProps {
@@ -13,20 +14,27 @@ export function Footer({ store }: FooterProps) {
   const isPaystack = PAYSTACK_CURRENCIES.includes(store.currency);
 
   return (
-    <footer
-      className="border-t border-[var(--colour-primary)] border-opacity-10
-      bg-[var(--colour-bg,#ffffff)] mt-auto"
-    >
+    <footer className="border-t border-[var(--colour-primary)] border-opacity-10 bg-[var(--colour-bg,#ffffff)] mt-auto">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
           {/* Brand */}
           <div className="space-y-3">
-            <h3
-              className="text-sm font-bold text-[var(--colour-primary)]"
-              style={{ fontFamily: 'var(--font-display, var(--font-body))' }}
-            >
-              {store.name}
-            </h3>
+            {store.logoUrl ? (
+              <Image
+                src={store.logoUrl}
+                alt={store.name}
+                width={100}
+                height={32}
+                className="h-7 w-auto object-contain"
+              />
+            ) : (
+              <h3
+                className="text-sm font-bold text-[var(--colour-primary)]"
+                style={{ fontFamily: 'var(--font-display, var(--font-body))' }}
+              >
+                {store.name}
+              </h3>
+            )}
             <p className="text-xs text-[var(--colour-primary)] opacity-50 leading-relaxed">
               Powered by Fynfloo
             </p>
@@ -34,18 +42,14 @@ export function Footer({ store }: FooterProps) {
 
           {/* Shop */}
           <div className="space-y-3">
-            <h4
-              className="text-xs uppercase tracking-widest font-medium
-              text-[var(--colour-primary)] opacity-50"
-            >
+            <h4 className="text-xs uppercase tracking-widest font-medium text-[var(--colour-primary)] opacity-50">
               Shop
             </h4>
             <ul className="space-y-2">
               <li>
                 <Link
                   href="/products"
-                  className="text-sm text-[var(--colour-primary)] opacity-60
-                    hover:opacity-100 transition-opacity"
+                  className="text-sm text-[var(--colour-primary)] opacity-60 hover:opacity-100 transition-opacity"
                 >
                   All products
                 </Link>
@@ -53,8 +57,7 @@ export function Footer({ store }: FooterProps) {
               <li>
                 <Link
                   href="/cart"
-                  className="text-sm text-[var(--colour-primary)] opacity-60
-                    hover:opacity-100 transition-opacity"
+                  className="text-sm text-[var(--colour-primary)] opacity-60 hover:opacity-100 transition-opacity"
                 >
                   Cart
                 </Link>
@@ -64,18 +67,14 @@ export function Footer({ store }: FooterProps) {
 
           {/* Account */}
           <div className="space-y-3">
-            <h4
-              className="text-xs uppercase tracking-widest font-medium
-              text-[var(--colour-primary)] opacity-50"
-            >
+            <h4 className="text-xs uppercase tracking-widest font-medium text-[var(--colour-primary)] opacity-50">
               Account
             </h4>
             <ul className="space-y-2">
               <li>
                 <Link
                   href="/account/login"
-                  className="text-sm text-[var(--colour-primary)] opacity-60
-                    hover:opacity-100 transition-opacity"
+                  className="text-sm text-[var(--colour-primary)] opacity-60 hover:opacity-100 transition-opacity"
                 >
                   Sign in
                 </Link>
@@ -83,8 +82,7 @@ export function Footer({ store }: FooterProps) {
               <li>
                 <Link
                   href="/account/signup"
-                  className="text-sm text-[var(--colour-primary)] opacity-60
-                    hover:opacity-100 transition-opacity"
+                  className="text-sm text-[var(--colour-primary)] opacity-60 hover:opacity-100 transition-opacity"
                 >
                   Create account
                 </Link>
@@ -92,8 +90,7 @@ export function Footer({ store }: FooterProps) {
               <li>
                 <Link
                   href="/account/orders"
-                  className="text-sm text-[var(--colour-primary)] opacity-60
-                    hover:opacity-100 transition-opacity"
+                  className="text-sm text-[var(--colour-primary)] opacity-60 hover:opacity-100 transition-opacity"
                 >
                   Orders
                 </Link>
@@ -103,11 +100,7 @@ export function Footer({ store }: FooterProps) {
         </div>
 
         {/* Bottom bar */}
-        <div
-          className="mt-12 pt-6 border-t border-[var(--colour-primary)]
-          border-opacity-10 flex flex-col md:flex-row items-center
-          justify-between gap-4"
-        >
+        <div className="mt-12 pt-6 border-t border-[var(--colour-primary)] border-opacity-10 flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-xs text-[var(--colour-primary)] opacity-40">
             © {year} {store.name}. All rights reserved.
           </p>
