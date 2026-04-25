@@ -177,10 +177,9 @@ export async function removeDiscount(slug: string): Promise<Cart> {
 }
 
 export async function initiateCheckout(slug: string): Promise<string | null> {
-  const res = await fetch(`${API_URL}/api/payments/checkout`, {
+  const res = await fetch('/api/storefront/checkout', {
     method: 'POST',
-    headers: buildPublicHeaders(slug),
-    credentials: 'include',
+    headers: buildBFFHeaders(slug),
   });
   if (!res.ok) return null;
   const data = await res.json();
