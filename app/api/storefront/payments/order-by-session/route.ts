@@ -18,12 +18,6 @@ export async function GET(req: NextRequest) {
     const slug = req.headers.get('x-store-slug') ?? '';
     const sessionId = req.nextUrl.searchParams.get('sessionId') ?? '';
 
-    console.log('order-by-session BFF:', {
-      slug,
-      sessionId,
-      allHeaders: Object.fromEntries(req.headers.entries()),
-    });
-
     if (!sessionId) {
       return NextResponse.json({ error: 'Missing sessionId' }, { status: 400 });
     }
