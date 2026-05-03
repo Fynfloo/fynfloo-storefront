@@ -23,6 +23,24 @@ import type {
   OrderDetail,
 } from '@/lib/types';
 
+export interface OrderBySessionResult {
+  status: 'confirmed' | 'processing';
+  sessionId: string;
+  customerEmail: string | null;
+  customerName: string | null;
+  order: {
+    id: string;
+    orderNumber: number;
+    totalPence: number;
+    currency: string;
+    items: Array<{
+      name: string;
+      quantity: number;
+      pricePence: number;
+    }>;
+  } | null;
+}
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080';
 
 // ─── Headers ─────────────────────────────────────────────────────────────────
@@ -319,9 +337,9 @@ export async function getCustomerOrder(slug: string, orderId: string): Promise<O
 export async function getOrderBySessionId(
   slug: string,
   sessionId: string,
-): Promise<OrderDetail | null> {
+): Promise<OrderBySessionResult | null> {
   const res = await fetch(
-    `/api/storefront/customer/orders/by-session?sessionId=${encodeURIComponent(sessionId)}`,
+    `/api/storefront/payments/order-by-session?sessionId=${encodeURIComponent(sessionId)}`,
     { headers: buildBFFHeaders(slug) },
   );
   if (!res.ok) return null;

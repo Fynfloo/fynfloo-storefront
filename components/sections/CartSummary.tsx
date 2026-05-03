@@ -93,7 +93,7 @@ export function CartSummary({ data, slug, cart }: CartSummaryProps) {
     try {
       const isLoggedIn = await checkCustomerSession(slug);
       if (!isLoggedIn) {
-        router.push('/account/login?next=/checkout');
+        router.push('/account/login?next=/cart');
         return;
       }
       const url = await initiateCheckout(slug);
