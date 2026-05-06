@@ -1,18 +1,13 @@
-'use client';
-
-import { useState, useEffect } from 'react';
-import { useRouter, useParams } from 'next/navigation';
-import { getCustomerProfile, getCustomerOrder } from '@/lib/storefront-client';
-import type { OrderDetail } from '@/lib/types';
+import { headers, cookies } from 'next/headers';
+import { notFound } from 'next/navigation';
+import Link from 'next/link';
+import type { Metadata } from 'next';
 import { formatPrice } from '@/lib/types';
 import { Container } from '@/components/ui/Container';
-import { Spinner } from '@/components/ui/Spinner';
-import Link from 'next/link';
+import { SESSION_COOKIE } from '@/app/api/storefront/_lib/proxy';
+import { fetchCustomerOrder } from '@/lib/api';
 
-function useSlug(): string {
-  if (typeof window === 'undefined') return '';
-  return document.documentElement.dataset.slug ?? '';
-}
+export const metadata: Metadata = { title: 'Order' };
 
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, string> = {
@@ -33,61 +28,17 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-export default function OrderDetailPage() {
-  const router = useRouter();
-  const params = useParams();
-  const id = params.id as string;
-  const slug = useSlug();
+export default async function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const headersList = await headers();
+  const cookieStore = await cookies();
 
-  const [order, setOrder] = useState<OrderDetail | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [notFound, setNotFound] = useState(false);
+  const slug = headersList.get('x-store-slug') ?? '';
+  const token = cookieStore.get(SESSION_COOKIE)?.value ?? '';
 
-  useEffect(() => {
-    if (!slug || !id) return;
+  const order = await fetchCustomerOrder(slug, token, id);
 
-    getCustomerProfile(slug).then((p) => {
-      if (!p) {
-        router.replace('/account/login?next=/account/orders');
-        return;
-      }
-
-      getCustomerOrder(slug, id).then((o) => {
-        if (!o) {
-          setNotFound(true);
-        } else {
-          setOrder(o);
-        }
-        setLoading(false);
-      });
-    });
-  }, [slug, id, router]);
-
-  if (loading) {
-    return (
-      <div className="py-24 flex items-center justify-center">
-        <Spinner size="lg" />
-      </div>
-    );
-  }
-
-  if (notFound || !order) {
-    return (
-      <div className="py-16 md:py-24">
-        <Container>
-          <div className="mx-auto max-w-lg text-center space-y-4">
-            <p className="text-[var(--colour-primary)] opacity-50">Order not found.</p>
-            <Link
-              href="/account/orders"
-              className="text-sm text-[var(--colour-secondary)] hover:opacity-70"
-            >
-              ← Back to orders
-            </Link>
-          </div>
-        </Container>
-      </div>
-    );
-  }
+  if (!order) notFound();
 
   const isDispatched = order.fulfilmentStatus === 'FULFILLED';
 
@@ -118,49 +69,26 @@ export default function OrderDetailPage() {
             </p>
           </div>
 
-          {/* Dispatch banner */}
+          {/* Status banner */}
           {isDispatched ? (
             <div className="flex items-start gap-3 rounded-[var(--radius-button)] border border-green-200 bg-green-50 p-4">
-              <svg
-                className="w-5 h-5 text-green-600 shrink-0 mt-0.5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M5 13l4 4L19 7"
-                />
+              <svg className="w-5 h-5 text-green-600 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
               <div>
-                <p className="text-sm font-semibold text-green-800">
-                  Your order has been dispatched
-                </p>
+                <p className="text-sm font-semibold text-green-800">Your order has been dispatched</p>
                 <p className="text-xs text-green-700 mt-0.5 opacity-80">
-                  It is on its way to you.
-                  {order.courierName ? ` Courier: ${order.courierName}.` : ''}
+                  It is on its way to you.{order.courierName ? ` Courier: ${order.courierName}.` : ''}
                 </p>
               </div>
             </div>
           ) : order.status === 'PAID' ? (
             <div
-              className="flex items-start gap-3 rounded-[var(--radius-button)] border border-[var(--colour-primary)] border-opacity-10 bg-opacity-5 p-4"
+              className="flex items-start gap-3 rounded-[var(--radius-button)] border border-[var(--colour-primary)] border-opacity-10 p-4"
               style={{ background: 'color-mix(in srgb, var(--colour-primary) 4%, transparent)' }}
             >
-              <svg
-                className="w-5 h-5 text-[var(--colour-primary)] opacity-40 shrink-0 mt-0.5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
+              <svg className="w-5 h-5 text-[var(--colour-primary)] opacity-40 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <p className="text-sm text-[var(--colour-primary)] opacity-60">
                 Your order is being prepared
@@ -202,23 +130,15 @@ export default function OrderDetailPage() {
               <h2 className="text-sm font-semibold text-[var(--colour-primary)] mb-3">
                 Shipping address
               </h2>
-              <p className="text-sm text-[var(--colour-primary)] opacity-70">
-                {order.shippingAddress.name}
-              </p>
-              <p className="text-sm text-[var(--colour-primary)] opacity-70">
-                {order.shippingAddress.line1}
-              </p>
+              <p className="text-sm text-[var(--colour-primary)] opacity-70">{order.shippingAddress.name}</p>
+              <p className="text-sm text-[var(--colour-primary)] opacity-70">{order.shippingAddress.line1}</p>
               {order.shippingAddress.line2 && (
-                <p className="text-sm text-[var(--colour-primary)] opacity-70">
-                  {order.shippingAddress.line2}
-                </p>
+                <p className="text-sm text-[var(--colour-primary)] opacity-70">{order.shippingAddress.line2}</p>
               )}
               <p className="text-sm text-[var(--colour-primary)] opacity-70">
                 {order.shippingAddress.city}, {order.shippingAddress.postcode}
               </p>
-              <p className="text-sm text-[var(--colour-primary)] opacity-70">
-                {order.shippingAddress.country}
-              </p>
+              <p className="text-sm text-[var(--colour-primary)] opacity-70">{order.shippingAddress.country}</p>
             </div>
           )}
 
@@ -230,18 +150,12 @@ export default function OrderDetailPage() {
                 {order.courierName && (
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-[var(--colour-primary)] opacity-50">Courier</span>
-                    <span className="text-sm text-[var(--colour-primary)] opacity-70">
-                      {order.courierName}
-                    </span>
+                    <span className="text-sm text-[var(--colour-primary)] opacity-70">{order.courierName}</span>
                   </div>
                 )}
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-[var(--colour-primary)] opacity-50">
-                    Tracking number
-                  </span>
-                  <span className="text-sm text-[var(--colour-primary)] opacity-70 font-mono">
-                    {order.trackingNumber}
-                  </span>
+                  <span className="text-sm text-[var(--colour-primary)] opacity-50">Tracking number</span>
+                  <span className="text-sm text-[var(--colour-primary)] opacity-70 font-mono">{order.trackingNumber}</span>
                 </div>
                 {order.trackingUrl && (
                   <a

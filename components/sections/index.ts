@@ -11,3 +11,6 @@ export { RelatedProducts } from './RelatedProducts';
 export { StockBadge } from './StockBadge';
 export { Testimonials } from './Testimonials';
 export { TextWithMedia } from './TextWithMedia';
+export { ProfileForm } from './ProfileForm';
+export { LoginForm } from './LoginForm';
+export { SignupForm } from './SignupForm';

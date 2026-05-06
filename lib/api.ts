@@ -1,5 +1,5 @@
 // lib/api.ts
-import type { StoreData, StorePage, Product } from '@/lib/types';
+import type { StoreData, StorePage, Product, CustomerProfile, Order, OrderDetail } from '@/lib/types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080';
 
@@ -79,5 +79,84 @@ export async function fetchProducts(slug: string, collection?: string | null): P
     });
   } catch {
     return [];
+  }
+}
+
+// ─── Authenticated customer fetches (server-only) ─────────────────────────────
+
+const PRIVATE_API_URL = process.env.API_URL ?? 'http://localhost:8080';
+const BFF_SECRET = process.env.BFF_SECRET ?? '';
+
+function buildAuthHeaders(slug: string, token: string): Record<string, string> {
+  return {
+    'Content-Type': 'application/json',
+    'X-Store-Slug': slug,
+    'X-BFF-Secret': BFF_SECRET,
+    Authorization: `Bearer ${token}`,
+  };
+}
+
+export async function fetchCustomerProfile(
+  slug: string,
+  token: string,
+): Promise<CustomerProfile | null> {
+  try {
+    const res = await fetch(`${PRIVATE_API_URL}/api/storefront/customer/profile`, {
+      headers: buildAuthHeaders(slug, token),
+      cache: 'no-store',
+    });
+    if (!res.ok) return null;
+    return res.json();
+  } catch {
+    return null;
+  }
+}
+
+export async function fetchCustomerOrders(slug: string, token: string): Promise<Order[]> {
+  try {
+    const res = await fetch(`${PRIVATE_API_URL}/api/storefront/customer/orders`, {
+      headers: buildAuthHeaders(slug, token),
+      cache: 'no-store',
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.orders ?? data ?? [];
+  } catch {
+    return [];
+  }
+}
+
+export async function fetchCustomerOrder(
+  slug: string,
+  token: string,
+  orderId: string,
+): Promise<OrderDetail | null> {
+  try {
+    const res = await fetch(`${PRIVATE_API_URL}/api/storefront/customer/orders/${orderId}`, {
+      headers: buildAuthHeaders(slug, token),
+      cache: 'no-store',
+    });
+    if (!res.ok) return null;
+    return res.json();
+  } catch {
+    return null;
+  }
+}
+
+export async function updateCustomerProfile(
+  slug: string,
+  token: string,
+  data: { name?: string; phone?: string },
+): Promise<CustomerProfile | null> {
+  try {
+    const res = await fetch(`${PRIVATE_API_URL}/api/storefront/customer/profile`, {
+      method: 'PATCH',
+      headers: buildAuthHeaders(slug, token),
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) return null;
+    return res.json();
+  } catch {
+    return null;
   }
 }

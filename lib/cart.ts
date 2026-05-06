@@ -11,8 +11,7 @@ export function getCartToken(): string | null {
 
 export function setCartToken(token: string): void {
   if (typeof document === 'undefined') return;
-  const domain = document.location.hostname;
   const expires = new Date();
   expires.setDate(expires.getDate() + 30);
-  document.cookie = `${CART_TOKEN_KEY}=${token}; expires=${expires.toUTCString()}; path=/; SameSite=Lax; domain=${domain}`;
+  document.cookie = `${CART_TOKEN_KEY}=${token}; expires=${expires.toUTCString()}; path=/; SameSite=Lax; `;
 }

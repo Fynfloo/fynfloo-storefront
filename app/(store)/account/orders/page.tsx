@@ -1,22 +1,12 @@
-'use client';
-
-import { useState, useEffect } from 'react';
-import { getCustomerOrders } from '@/lib/storefront-client';
-import type { Order } from '@/lib/types';
+import { headers, cookies } from 'next/headers';
+import Link from 'next/link';
+import type { Metadata } from 'next';
 import { formatPrice } from '@/lib/types';
 import { Container } from '@/components/ui/Container';
-import { Spinner } from '@/components/ui/Spinner';
-import Link from 'next/link';
+import { SESSION_COOKIE } from '@/app/api/storefront/_lib/proxy';
+import { fetchCustomerOrders } from '@/lib/api';
 
-function useSlug(): string {
-  if (typeof window === 'undefined') return '';
-  return document.documentElement.dataset.slug ?? '';
-}
-
-function useStoreCurrency(): string {
-  if (typeof window === 'undefined') return 'GBP';
-  return document.documentElement.dataset.currency ?? 'GBP';
-}
+export const metadata: Metadata = { title: 'My Orders' };
 
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, string> = {
@@ -35,28 +25,15 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-export default function OrdersPage() {
-  const slug = useSlug();
-  const currency = useStoreCurrency();
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(true);
+export default async function OrdersPage() {
+  const headersList = await headers();
+  const cookieStore = await cookies();
 
-  useEffect(() => {
-    if (!slug) return;
+  const slug = headersList.get('x-store-slug') ?? '';
+  const currency = headersList.get('x-store-currency') ?? 'GBP';
+  const token = cookieStore.get(SESSION_COOKIE)?.value ?? '';
 
-    getCustomerOrders(slug).then((o) => {
-      setOrders(o);
-      setLoading(false);
-    });
-  }, [slug]);
-
-  if (loading) {
-    return (
-      <div className="py-24 flex items-center justify-center">
-        <Spinner size="lg" />
-      </div>
-    );
-  }
+  const orders = await fetchCustomerOrders(slug, token);
 
   return (
     <div className="py-16 md:py-24">
@@ -66,13 +43,12 @@ export default function OrdersPage() {
             <h1 className="text-2xl font-bold text-[var(--colour-primary)]">My account</h1>
           </div>
 
-          {/* Nav tabs */}
           <div className="flex gap-6 border-b border-[var(--colour-primary)] border-opacity-10 mb-8">
             {[
               { label: 'Profile', href: '/account/profile', active: false },
               { label: 'Orders', href: '/account/orders', active: true },
             ].map((item) => (
-              <a
+              <Link
                 key={item.href}
                 href={item.href}
                 className={`pb-3 text-sm font-medium transition-colors
@@ -83,7 +59,7 @@ export default function OrdersPage() {
                   }`}
               >
                 {item.label}
-              </a>
+              </Link>
             ))}
           </div>
 

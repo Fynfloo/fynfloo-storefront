@@ -4,20 +4,16 @@ import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import type { StoreData } from '@/lib/types';
-import {
-  fetchCart,
-  checkCustomerSession,
-  customerLogout,
-  getCustomerProfile,
-} from '@/lib/storefront-client';
+import type { StoreData, CustomerProfile } from '@/lib/types';
+import { fetchCart, customerLogout } from '@/lib/storefront-client';
 
 interface NavProps {
   store: StoreData;
   slug: string;
+  profile: CustomerProfile | null;
 }
 
-export function Nav({ store, slug }: NavProps) {
+export function Nav({ store, slug, profile }: NavProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -29,19 +25,7 @@ export function Nav({ store, slug }: NavProps) {
     staleTime: 30 * 1000,
   });
 
-  const { data: isAuthenticated } = useQuery({
-    queryKey: ['auth', slug],
-    queryFn: () => checkCustomerSession(slug),
-    staleTime: 5 * 60 * 1000,
-  });
-
-  const { data: profile } = useQuery({
-    queryKey: ['profile', slug],
-    queryFn: () => getCustomerProfile(slug),
-    enabled: !!isAuthenticated,
-    staleTime: 5 * 60 * 1000,
-  });
-
+  const isAuthenticated = profile !== null;
   const cartCount = cartData?.cart.items.reduce((sum, item) => sum + item.quantity, 0) ?? 0;
 
   // Close dropdown on outside click
@@ -58,8 +42,6 @@ export function Nav({ store, slug }: NavProps) {
   async function handleLogout() {
     setDropdownOpen(false);
     await customerLogout(slug);
-    queryClient.invalidateQueries({ queryKey: ['auth', slug], refetchType: 'all' });
-    queryClient.invalidateQueries({ queryKey: ['profile', slug], refetchType: 'all' });
     queryClient.invalidateQueries({ queryKey: ['cart', slug], refetchType: 'all' });
     window.location.href = '/';
   }
@@ -115,10 +97,7 @@ export function Nav({ store, slug }: NavProps) {
           {/* Right side */}
           <div className="flex items-center gap-4">
             {/* Auth — desktop */}
-            {isAuthenticated === undefined ? (
-              // Auth state unknown — placeholder to avoid layout shift
-              <div className="hidden md:block w-8 h-8" />
-            ) : isAuthenticated ? (
+            {isAuthenticated ? (
               // Logged in — avatar dropdown
               <div className="relative hidden md:block" ref={dropdownRef}>
                 <button
@@ -249,7 +228,7 @@ export function Nav({ store, slug }: NavProps) {
             </Link>
 
             {/* Auth — mobile */}
-            {isAuthenticated === undefined ? null : !isAuthenticated ? (
+            {!isAuthenticated ? (
               <Link
                 href="/account/login"
                 onClick={() => setMenuOpen(false)}
