@@ -146,20 +146,20 @@ export function Nav({ store, slug }: NavProps) {
                     <Link
                       href="/account/orders"
                       onClick={() => setDropdownOpen(false)}
-                      className="block px-4 py-2 text-sm text-[var(--colour-primary)] opacity-70 hover:opacity-100 hover:bg-[var(--colour-primary)] hover:bg-opacity-5 transition-colors"
+                      className="block px-4 py-2 text-sm text-[var(--colour-primary)] opacity-70 hover:opacity-100 hover:bg-[var(--colour-primary)]/5 transition-colors"
                     >
                       My Orders
                     </Link>
                     <Link
                       href="/account/profile"
                       onClick={() => setDropdownOpen(false)}
-                      className="block px-4 py-2 text-sm text-[var(--colour-primary)] opacity-70 hover:opacity-100 hover:bg-[var(--colour-primary)] hover:bg-opacity-5 transition-colors"
+                      className="block px-4 py-2 text-sm text-[var(--colour-primary)] opacity-70 hover:opacity-100 hover:bg-[var(--colour-primary)]/5 transition-colors"
                     >
                       Account Settings
                     </Link>
                     <button
                       onClick={handleLogout}
-                      className="w-full text-left px-4 py-2 text-sm text-[var(--colour-primary)] opacity-70 hover:opacity-100 hover:bg-[var(--colour-primary)] hover:bg-opacity-5 transition-colors border-t border-[var(--colour-primary)] border-opacity-10"
+                      className="w-full text-left px-4 py-2 text-sm text-[var(--colour-primary)] opacity-70 hover:opacity-100 hover:bg-[var(--colour-primary)]/5 transition-colors border-t border-[var(--colour-primary)] border-opacity-10"
                     >
                       Sign out
                     </button>
