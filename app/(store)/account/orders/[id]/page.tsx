@@ -145,7 +145,10 @@ export default function OrderDetailPage() {
               </div>
             </div>
           ) : order.status === 'PAID' ? (
-            <div className="flex items-start gap-3 rounded-[var(--radius-button)] border border-[var(--colour-primary)] border-opacity-10 bg-[var(--colour-primary)] bg-opacity-5 p-4">
+            <div
+              className="flex items-start gap-3 rounded-[var(--radius-button)] border border-[var(--colour-primary)] border-opacity-10 bg-opacity-5 p-4"
+              style={{ background: 'color-mix(in srgb, var(--colour-primary) 4%, transparent)' }}
+            >
               <svg
                 className="w-5 h-5 text-[var(--colour-primary)] opacity-40 shrink-0 mt-0.5"
                 fill="none"

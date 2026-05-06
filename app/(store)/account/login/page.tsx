@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Container } from '@/components/ui/Container';
 import { Spinner } from '@/components/ui/Spinner';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 // We read slug from a data attribute set on the body by layout
 function useSlug(): string {
@@ -19,6 +20,7 @@ type Tab = 'signin' | 'create';
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const queryClient = useQueryClient();
   const next = searchParams.get('next') ?? '/account/orders';
   const slug = useSlug();
 
@@ -29,20 +31,20 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [lockedUntil, setLockedUntil] = useState<Date | null>(null);
   const [successMessage, setSuccessMessage] = useState('');
-  const [checking, setChecking] = useState(true);
   // Countdown timer for locked account
   const [timeRemaining, setTimeRemaining] = useState('');
 
+  const { data: isAuthenticated, isLoading: checking } = useQuery({
+    queryKey: ['auth', slug],
+    queryFn: () => checkCustomerSession(slug),
+    enabled: !!slug,
+    staleTime: 5 * 60 * 1000,
+  });
+
   useEffect(() => {
-    if (!slug) return;
-    checkCustomerSession(slug).then((authenticated) => {
-      if (authenticated) {
-        router.replace(next);
-      } else {
-        setChecking(false);
-      }
-    });
-  }, [slug, next, router]);
+    if (!isAuthenticated) return;
+    router.replace(next);
+  }, [isAuthenticated, next, router]);
 
   useEffect(() => {
     if (!lockedUntil) return;
@@ -70,6 +72,10 @@ export default function LoginPage() {
     const result = await customerLogin(slug, email, password);
 
     if (result.ok) {
+      // Invalidate cart — backend merged anonymous cart into customer cart
+      queryClient.invalidateQueries({ queryKey: ['auth', slug], refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ['profile', slug], refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ['cart', slug], refetchType: 'all' });
       router.replace(next);
       return;
     }

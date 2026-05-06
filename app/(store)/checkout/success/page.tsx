@@ -8,6 +8,7 @@ import { formatPrice } from '@/lib/types';
 import { Container } from '@/components/ui/Container';
 import { Spinner } from '@/components/ui/Spinner';
 import Link from 'next/link';
+import { useQueryClient } from '@tanstack/react-query';
 
 function useSlug(): string {
   if (typeof window === 'undefined') return '';
@@ -26,12 +27,14 @@ export default function CheckoutSuccessPage() {
   const sessionId = searchParams.get('session_id') ?? '';
   const slug = useSlug();
   const currency = useStoreCurrency();
+  const queryClient = useQueryClient();
 
   const [pageStatus, setPageStatus] = useState<PageStatus>(() =>
     !sessionId ? 'failed' : 'polling',
   );
   const [result, setResult] = useState<OrderBySessionResult | null>(null);
   const attemptsRef = useRef(0);
+  const clearedRef = useRef(false);
 
   useEffect(() => {
     if (pageStatus === 'failed') return;
@@ -61,6 +64,25 @@ export default function CheckoutSuccessPage() {
       if (data.status === 'confirmed') {
         setResult(data);
         setPageStatus('confirmed');
+
+        // Clear cart token and invalidate cart cache — order is complete
+        if (!clearedRef.current) {
+          clearedRef.current = true;
+
+          queryClient.setQueryData(['cart', slug], {
+            cartToken: null,
+            cart: {
+              id: '',
+              items: [],
+              subtotal: 0,
+              total: 0,
+              discountCode: null,
+              discountAmount: 0,
+            },
+          });
+
+          queryClient.invalidateQueries({ queryKey: ['cart', slug] });
+        }
         return;
       }
 
