@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { confirmEmail } from '@/lib/storefront-client';
-import { Container } from '@/components/ui/Container';
 import { Spinner } from '@/components/ui/Spinner';
 
 function useSlug(): string {
@@ -19,16 +18,12 @@ export default function ConfirmEmailPage() {
   const uid = searchParams.get('uid') ?? '';
   const slug = useSlug();
 
-  // Derive initial state synchronously — no setState in effect body
   const [state, setState] = useState<State>(() => {
-    if (!token || !uid) {
-      return { status: 'error', message: 'Invalid confirmation link.' };
-    }
+    if (!token || !uid) return { status: 'error', message: 'Invalid confirmation link.' };
     return { status: 'pending' };
   });
 
   useEffect(() => {
-    // If we already know it's invalid, skip the API call
     if (state.status === 'error') return;
     if (!slug) return;
 
@@ -40,85 +35,66 @@ export default function ConfirmEmailPage() {
       }
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [slug]); // only re-run if slug changes (page mount)
+  }, [slug]);
 
   return (
-    <div className="py-16 md:py-24">
-      <Container>
-        <div className="mx-auto max-w-sm text-center space-y-4">
+    <div className="min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center bg-gray-50/50 px-4 py-12">
+      <div className="w-full max-w-sm">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-8 py-12 text-center">
           {state.status === 'pending' && (
-            <>
+            <div className="space-y-4">
               <Spinner size="md" className="mx-auto" />
-              <p className="text-sm text-[var(--colour-primary)] opacity-60">
+              <p className="text-sm font-medium text-[var(--colour-primary)]/60">
                 Confirming your email…
               </p>
-            </>
+            </div>
           )}
 
           {state.status === 'success' && (
-            <>
-              <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mx-auto">
-                <svg
-                  className="w-6 h-6 text-green-600"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M5 13l4 4L19 7"
-                  />
+            <div className="space-y-4">
+              <div className="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center mx-auto">
+                <svg className="w-7 h-7 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                 </svg>
               </div>
-              <h1 className="text-2xl font-bold text-[var(--colour-primary)]">Email confirmed</h1>
-              <p className="text-sm text-[var(--colour-primary)] opacity-60">
-                Your account is active. You can now sign in.
-              </p>
+              <div>
+                <h1 className="text-xl font-bold text-[var(--colour-primary)]">Email confirmed</h1>
+                <p className="text-sm text-[var(--colour-primary)]/60 mt-2">
+                  Your account is active. You can now sign in.
+                </p>
+              </div>
               <a
                 href="/account/login"
-                className="inline-block mt-2 text-sm font-medium text-[var(--colour-secondary)] hover:opacity-70 transition-opacity"
+                className="inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--colour-secondary)] hover:opacity-70 transition-opacity"
               >
                 Sign in →
               </a>
-            </>
+            </div>
           )}
 
           {state.status === 'error' && (
-            <>
-              <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mx-auto">
-                <svg
-                  className="w-6 h-6 text-red-600"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
+            <div className="space-y-4">
+              <div className="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center mx-auto">
+                <svg className="w-7 h-7 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </div>
-              <h1 className="text-2xl font-bold text-[var(--colour-primary)]">
-                Confirmation failed
-              </h1>
-              <p className="text-sm text-[var(--colour-primary)] opacity-60">
-                {state.message ||
-                  'This link may have expired. Request a new one by signing up again.'}
-              </p>
+              <div>
+                <h1 className="text-xl font-bold text-[var(--colour-primary)]">Confirmation failed</h1>
+                <p className="text-sm text-[var(--colour-primary)]/60 mt-2">
+                  {state.message || 'This link may have expired. Sign up again to get a new one.'}
+                </p>
+              </div>
               <a
                 href="/account/login"
-                className="inline-block mt-2 text-sm font-medium text-[var(--colour-secondary)] hover:opacity-70 transition-opacity"
+                className="inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--colour-secondary)] hover:opacity-70 transition-opacity"
               >
                 Back to sign in →
               </a>
-            </>
+            </div>
           )}
         </div>
-      </Container>
+      </div>
     </div>
   );
 }
