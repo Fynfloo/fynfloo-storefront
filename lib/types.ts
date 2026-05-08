@@ -28,6 +28,8 @@ export interface StorePage {
 export type Section =
   | { id: string; type: 'hero.basic'; data: HeroBasicData }
   | { id: string; type: 'commerce.productGrid'; data: ProductGridData }
+  | { id: string; type: 'commerce.categoryGrid'; data: CategoryGridData }
+  | { id: string; type: 'commerce.featuredCarousel'; data: FeaturedCarouselData }
   | { id: string; type: 'commerce.productHero'; data: ProductHeroData }
   | { id: string; type: 'commerce.productSpecs'; data: ProductSpecsData }
   | { id: string; type: 'commerce.relatedProducts'; data: RelatedProductsData }
@@ -169,13 +171,36 @@ export interface CartResponse {
 // ─── Section data shapes ──────────────────────────────────────────────────────
 
 export interface HeroBasicData {
+  variant?: 'split' | 'fullbleed';
   eyebrow?: string;
   title: string;
   subtitle?: string;
+  imageUrl?: string;
   primaryCtaLabel?: string;
   primaryCtaHref?: string;
   secondaryCtaLabel?: string;
   secondaryCtaHref?: string;
+}
+
+export interface FeaturedCarouselData {
+  heading: string;
+  headingMuted?: string;
+  collectionHandle?: string | null;
+  promoHeading?: string;
+  promoSubheading?: string;
+  promoCtaLabel?: string;
+  promoCtaHref?: string;
+}
+
+export interface CategoryItem {
+  label: string;
+  handle: string;
+  imageUrl?: string;
+}
+
+export interface CategoryGridData {
+  heading?: string;
+  categories: CategoryItem[];
 }
 
 export interface ProductGridData {

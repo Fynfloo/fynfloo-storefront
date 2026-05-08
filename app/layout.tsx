@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
-import { headers } from 'next/headers';
+import { headers, cookies } from 'next/headers';
 import './globals.css';
 import { buildThemeCSS } from '@/lib/theme';
-import { fetchStoreData } from '@/lib/api';
+import { fetchStoreData, fetchCustomerProfile } from '@/lib/api';
+import { SESSION_COOKIE } from '@/app/api/storefront/_lib/proxy';
 import { Nav } from '@/components/ui/Nav';
 import { Footer } from '@/components/ui/Footer';
 import { Providers } from './providers';
@@ -26,7 +27,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const domain = headersList.get('x-store-domain');
 
   const identifier = slug ?? domain;
+
+  const cookieStore = await cookies();
+  const token = cookieStore.get(SESSION_COOKIE)?.value ?? null;
+
   const store = identifier ? await fetchStoreData(identifier) : null;
+  const effectiveSlug = slug ?? store?.slug ?? null;
+  const profile = token && effectiveSlug ? await fetchCustomerProfile(effectiveSlug, token) : null;
 
   // Store is offline — redirect all pages to coming soon.
   // Excludes /coming-soon itself to prevent redirect loop.
@@ -47,7 +54,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       </head>
       <body className="flex flex-col min-h-screen bg-[var(--colour-bg,#ffffff)]">
         <Providers>
-          {showChrome && <Nav store={store} slug={slug} />}
+          {showChrome && <Nav store={store} slug={slug} profile={profile} />}
           <main className="flex-1">{children}</main>
           {showChrome && <Footer store={store} />}
         </Providers>

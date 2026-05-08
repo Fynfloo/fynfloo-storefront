@@ -2,6 +2,8 @@
 import type { Section, Product, StoreData } from '@/lib/types';
 import {
   HeroBasic,
+  CategoryGrid,
+  FeaturedCarouselServer,
   ProductGrid,
   ProductHero,
   ProductSpecs,
@@ -68,12 +70,24 @@ function SectionRenderer({ section, context }: SectionRendererProps) {
     case 'hero.basic':
       return <HeroBasic data={section.data} />;
 
+    case 'commerce.categoryGrid':
+      return <CategoryGrid data={section.data} />;
+
+    case 'commerce.featuredCarousel':
+      return (
+        <FeaturedCarouselServer
+          data={section.data}
+          slug={context.slug}
+          store={context.store}
+        />
+      );
+
     case 'commerce.productGrid':
       return (
         <ProductGrid
           data={section.data}
           slug={context.slug}
-          store={context.store} // ← pass store
+          store={context.store}
         />
       );
 

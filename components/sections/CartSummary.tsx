@@ -1,4 +1,3 @@
-// components/sections/CartSummary.tsx
 'use client';
 
 import { useRef, useState } from 'react';
@@ -33,14 +32,10 @@ export function CartSummary({ data, slug, cart }: CartSummaryProps) {
 
   const [checkingOut, setCheckingOut] = useState(false);
   const [checkoutError, setCheckoutError] = useState('');
-
-  // ── Discount state ────────────────────────────────────────────────────────────
   const [codeInput, setCodeInput] = useState('');
   const [discountPending, setDiscountPending] = useState(false);
   const [discountError, setDiscountError] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
-
-  // ── Helpers ───────────────────────────────────────────────────────────────────
 
   function updateCartCache(updatedCart: Cart) {
     queryClient.setQueryData<CartResponse>(['cart', slug], (old) => {
@@ -49,12 +44,9 @@ export function CartSummary({ data, slug, cart }: CartSummaryProps) {
     });
   }
 
-  // ── Apply discount ────────────────────────────────────────────────────────────
-
   async function handleApplyDiscount() {
     const code = codeInput.trim().toUpperCase();
     if (!code) return;
-
     setDiscountError('');
     setDiscountPending(true);
     try {
@@ -70,8 +62,6 @@ export function CartSummary({ data, slug, cart }: CartSummaryProps) {
     }
   }
 
-  // ── Remove discount ───────────────────────────────────────────────────────────
-
   async function handleRemoveDiscount() {
     setDiscountError('');
     setDiscountPending(true);
@@ -84,8 +74,6 @@ export function CartSummary({ data, slug, cart }: CartSummaryProps) {
       setDiscountPending(false);
     }
   }
-
-  // ── Checkout ──────────────────────────────────────────────────────────────────
 
   async function handleCheckout() {
     setCheckingOut(true);
@@ -113,49 +101,35 @@ export function CartSummary({ data, slug, cart }: CartSummaryProps) {
   const showDiscountInput = data.showDiscountCode;
 
   return (
-    <div className="bg-[var(--colour-bg,#ffffff)]">
+    <div className="pb-14">
       <Container>
-        <div className="pb-16">
-          <div className="ml-auto max-w-sm space-y-4 rounded-[var(--radius-button)] border border-[var(--colour-primary)] border-opacity-10 p-6">
-            <h2
-              className="text-lg font-semibold text-[var(--colour-primary)]"
-              style={{ fontFamily: 'var(--font-display, var(--font-body))' }}
-            >
-              Order summary
-            </h2>
+        <div className="ml-auto max-w-sm">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5">
+            <h2 className="text-base font-bold text-[var(--colour-primary)]">Order summary</h2>
 
             {/* Line items */}
-            <div className="space-y-2 border-t border-[var(--colour-primary)] border-opacity-10 pt-4">
-              <div className="flex justify-between text-sm text-[var(--colour-primary)]">
-                <span className="opacity-60">Subtotal</span>
-                <span>{formatPrice(cart.subtotal, currency)}</span>
+            <div className="space-y-2.5">
+              <div className="flex justify-between text-sm">
+                <span className="text-[var(--colour-primary)]/50">Subtotal</span>
+                <span className="font-medium text-[var(--colour-primary)]">{formatPrice(cart.subtotal, currency)}</span>
               </div>
 
-              {/* Applied discount line */}
               {hasDiscount && (
-                <div className="flex justify-between text-sm">
-                  <div className="flex items-center gap-1.5">
-                    <span
-                      className="font-mono text-xs px-1.5 py-0.5 rounded"
-                      style={{
-                        background: 'var(--colour-secondary)',
-                        color: '#fff',
-                        opacity: 0.85,
-                      }}
-                    >
+                <div className="flex items-center justify-between text-sm">
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-xs px-2 py-0.5 rounded-md bg-[var(--colour-secondary)]/10 text-[var(--colour-secondary)] font-semibold">
                       {cart.discountCode}
                     </span>
                     <button
                       onClick={handleRemoveDiscount}
                       disabled={discountPending}
-                      className="text-xs opacity-40 hover:opacity-70 transition-opacity disabled:opacity-20"
-                      style={{ color: 'var(--colour-primary)' }}
-                      aria-label="Remove discount code"
+                      className="text-xs text-[var(--colour-primary)]/30 hover:text-red-500 transition-colors disabled:opacity-20"
+                      aria-label="Remove discount"
                     >
                       ✕
                     </button>
                   </div>
-                  <span style={{ color: 'var(--colour-secondary)' }}>
+                  <span className="font-medium text-[var(--colour-secondary)]">
                     {cart.discountAmount > 0
                       ? `−${formatPrice(cart.discountAmount, currency)}`
                       : 'Free shipping'}
@@ -163,26 +137,23 @@ export function CartSummary({ data, slug, cart }: CartSummaryProps) {
                 </div>
               )}
 
-              <div className="flex justify-between text-sm text-[var(--colour-primary)]">
-                <span className="opacity-60">Shipping</span>
-                <span className="opacity-60">Calculated at checkout</span>
+              <div className="flex justify-between text-sm">
+                <span className="text-[var(--colour-primary)]/50">Shipping</span>
+                <span className="text-[var(--colour-primary)]/40 text-xs self-center">Calculated at checkout</span>
               </div>
             </div>
 
             {/* Total */}
-            <div className="flex justify-between border-t border-[var(--colour-primary)] border-opacity-10 pt-4">
-              <span className="font-semibold text-[var(--colour-primary)]">Total</span>
-              <span className="font-semibold text-[var(--colour-primary)]">
+            <div className="flex justify-between items-center pt-4 border-t border-gray-100">
+              <span className="text-base font-bold text-[var(--colour-primary)]">Total</span>
+              <span className="text-lg font-bold text-[var(--colour-primary)] tabular-nums">
                 {formatPrice(cart.total, currency)}
               </span>
             </div>
 
-            {/* Discount code input — shown when no code applied */}
+            {/* Discount code input */}
             {showDiscountInput && !hasDiscount && (
-              <div className="space-y-2 border-t border-[var(--colour-primary)] border-opacity-10 pt-4">
-                <p className="text-xs font-medium text-[var(--colour-primary)] opacity-60">
-                  Discount code
-                </p>
+              <div className="space-y-2 pt-1">
                 <div className="flex gap-2">
                   <input
                     ref={inputRef}
@@ -195,37 +166,14 @@ export function CartSummary({ data, slug, cart }: CartSummaryProps) {
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') handleApplyDiscount();
                     }}
-                    placeholder="Enter code"
+                    placeholder="Discount code"
                     disabled={discountPending}
-                    className="flex-1 h-9 px-3 text-sm rounded-[var(--radius-button)] border outline-none transition-colors disabled:opacity-50"
-                    style={{
-                      background: 'transparent',
-                      borderColor: discountError
-                        ? '#ef4444'
-                        : 'color-mix(in srgb, var(--colour-primary) 20%, transparent)',
-                      color: 'var(--colour-primary)',
-                    }}
-                    onFocus={(e) => {
-                      if (!discountError) {
-                        e.currentTarget.style.borderColor =
-                          'color-mix(in srgb, var(--colour-primary) 50%, transparent)';
-                      }
-                    }}
-                    onBlur={(e) => {
-                      if (!discountError) {
-                        e.currentTarget.style.borderColor =
-                          'color-mix(in srgb, var(--colour-primary) 20%, transparent)';
-                      }
-                    }}
+                    className="flex-1 h-10 px-3 text-sm rounded-[var(--radius-button)] border border-[var(--colour-primary)]/15 bg-gray-50 text-[var(--colour-primary)] placeholder-[var(--colour-primary)]/30 outline-none focus:ring-2 focus:ring-[var(--colour-primary)]/10 focus:border-[var(--colour-primary)]/30 transition-colors disabled:opacity-50"
                   />
                   <button
                     onClick={handleApplyDiscount}
                     disabled={discountPending || !codeInput.trim()}
-                    className="h-9 px-3 text-sm font-medium rounded-[var(--radius-button)] transition-opacity disabled:opacity-40 whitespace-nowrap"
-                    style={{
-                      background: 'color-mix(in srgb, var(--colour-primary) 8%, transparent)',
-                      color: 'var(--colour-primary)',
-                    }}
+                    className="h-10 px-4 text-sm font-semibold rounded-[var(--radius-button)] bg-[var(--colour-primary)]/6 text-[var(--colour-primary)] hover:bg-[var(--colour-primary)]/10 transition-colors disabled:opacity-40 whitespace-nowrap"
                   >
                     {discountPending ? (
                       <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border border-current border-t-transparent" />
@@ -234,30 +182,35 @@ export function CartSummary({ data, slug, cart }: CartSummaryProps) {
                     )}
                   </button>
                 </div>
-
-                {/* Error message */}
                 {discountError && (
-                  <p className="text-xs" style={{ color: '#ef4444' }}>
-                    {discountError}
-                  </p>
+                  <p className="text-xs text-red-500">{discountError}</p>
                 )}
               </div>
             )}
 
             {/* Checkout error */}
             {checkoutError && (
-              <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-[var(--radius-button)] px-3 py-2">
-                {checkoutError}
-              </p>
+              <div className="flex gap-2 p-3 rounded-xl bg-amber-50 border border-amber-100">
+                <svg className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126z" />
+                </svg>
+                <p className="text-xs text-amber-700">{checkoutError}</p>
+              </div>
             )}
 
             <Button onClick={handleCheckout} loading={checkingOut} size="lg" className="w-full">
               Proceed to checkout
             </Button>
 
-            <p className="text-center text-xs text-[var(--colour-primary)] opacity-40">
-              Secure checkout
-            </p>
+            {/* Trust signals */}
+            <div className="flex items-center justify-center gap-4 pt-1">
+              <div className="flex items-center gap-1.5 text-xs text-[var(--colour-primary)]/30">
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+                </svg>
+                Secure checkout
+              </div>
+            </div>
           </div>
         </div>
       </Container>

@@ -1,260 +1,186 @@
-'use client';
-
-import { useState, useEffect } from 'react';
-import { useRouter, useParams } from 'next/navigation';
-import { getCustomerProfile, getCustomerOrder } from '@/lib/storefront-client';
-import type { OrderDetail } from '@/lib/types';
-import { formatPrice } from '@/lib/types';
-import { Container } from '@/components/ui/Container';
-import { Spinner } from '@/components/ui/Spinner';
+import { headers, cookies } from 'next/headers';
+import { notFound } from 'next/navigation';
 import Link from 'next/link';
+import type { Metadata } from 'next';
+import { formatPrice } from '@/lib/types';
+import { SESSION_COOKIE } from '@/app/api/storefront/_lib/proxy';
+import { fetchCustomerOrder } from '@/lib/api';
 
-function useSlug(): string {
-  if (typeof window === 'undefined') return '';
-  return document.documentElement.dataset.slug ?? '';
-}
+export const metadata: Metadata = { title: 'Order' };
+
+const STATUS_STYLES: Record<string, { bg: string; text: string; dot: string; label: string }> = {
+  PAID:               { bg: 'bg-green-50',  text: 'text-green-700',  dot: 'bg-green-500',  label: 'Paid' },
+  PENDING:            { bg: 'bg-amber-50',  text: 'text-amber-700',  dot: 'bg-amber-500',  label: 'Pending' },
+  FAILED:             { bg: 'bg-red-50',    text: 'text-red-600',    dot: 'bg-red-500',    label: 'Failed' },
+  FULFILLED:          { bg: 'bg-blue-50',   text: 'text-blue-700',   dot: 'bg-blue-500',   label: 'Fulfilled' },
+  CANCELLED:          { bg: 'bg-gray-100',  text: 'text-gray-500',   dot: 'bg-gray-400',   label: 'Cancelled' },
+  REFUNDED:           { bg: 'bg-orange-50', text: 'text-orange-700', dot: 'bg-orange-500', label: 'Refunded' },
+  PARTIALLY_REFUNDED: { bg: 'bg-orange-50', text: 'text-orange-700', dot: 'bg-orange-500', label: 'Part. refunded' },
+};
 
 function StatusBadge({ status }: { status: string }) {
-  const map: Record<string, string> = {
-    PAID: 'bg-green-100 text-green-700',
-    PENDING: 'bg-amber-100 text-amber-700',
-    FAILED: 'bg-red-100 text-red-700',
-    FULFILLED: 'bg-blue-100 text-blue-700',
-    CANCELLED: 'bg-gray-100 text-gray-600',
-    REFUNDED: 'bg-orange-100 text-orange-700',
-    PARTIALLY_REFUNDED: 'bg-orange-100 text-orange-700',
-  };
+  const s = STATUS_STYLES[status] ?? { bg: 'bg-gray-100', text: 'text-gray-500', dot: 'bg-gray-400', label: status };
   return (
-    <span
-      className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${map[status] ?? 'bg-gray-100 text-gray-600'}`}
-    >
-      {status.charAt(0) + status.slice(1).toLowerCase().replace(/_/g, ' ')}
+    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${s.bg} ${s.text}`}>
+      <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
+      {s.label}
     </span>
   );
 }
 
-export default function OrderDetailPage() {
-  const router = useRouter();
-  const params = useParams();
-  const id = params.id as string;
-  const slug = useSlug();
+export default async function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const headersList = await headers();
+  const cookieStore = await cookies();
 
-  const [order, setOrder] = useState<OrderDetail | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [notFound, setNotFound] = useState(false);
+  const slug = headersList.get('x-store-slug') ?? '';
+  const token = cookieStore.get(SESSION_COOKIE)?.value ?? '';
 
-  useEffect(() => {
-    if (!slug || !id) return;
-
-    getCustomerProfile(slug).then((p) => {
-      if (!p) {
-        router.replace('/account/login?next=/account/orders');
-        return;
-      }
-
-      getCustomerOrder(slug, id).then((o) => {
-        if (!o) {
-          setNotFound(true);
-        } else {
-          setOrder(o);
-        }
-        setLoading(false);
-      });
-    });
-  }, [slug, id, router]);
-
-  if (loading) {
-    return (
-      <div className="py-24 flex items-center justify-center">
-        <Spinner size="lg" />
-      </div>
-    );
-  }
-
-  if (notFound || !order) {
-    return (
-      <div className="py-16 md:py-24">
-        <Container>
-          <div className="mx-auto max-w-lg text-center space-y-4">
-            <p className="text-[var(--colour-primary)] opacity-50">Order not found.</p>
-            <Link
-              href="/account/orders"
-              className="text-sm text-[var(--colour-secondary)] hover:opacity-70"
-            >
-              ← Back to orders
-            </Link>
-          </div>
-        </Container>
-      </div>
-    );
-  }
+  const order = await fetchCustomerOrder(slug, token, id);
+  if (!order) notFound();
 
   const isDispatched = order.fulfilmentStatus === 'FULFILLED';
 
   return (
-    <div className="py-16 md:py-24">
-      <Container>
-        <div className="mx-auto max-w-2xl space-y-8">
-          {/* Header */}
-          <div>
-            <Link
-              href="/account/orders"
-              className="text-sm text-[var(--colour-primary)] opacity-40 hover:opacity-70 transition-opacity"
-            >
-              ← Orders
-            </Link>
-            <div className="flex items-center justify-between mt-4">
-              <h1 className="text-2xl font-bold text-[var(--colour-primary)]">
+    <div className="min-h-screen bg-gray-50/60 py-10 md:py-14">
+      <div className="mx-auto max-w-2xl px-4 sm:px-6 lg:px-8 space-y-5">
+        {/* Back */}
+        <Link
+          href="/account/orders"
+          className="inline-flex items-center gap-1.5 text-xs font-medium text-[var(--colour-primary)]/40 hover:text-[var(--colour-primary)]/70 transition-colors"
+        >
+          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+          </svg>
+          Back to orders
+        </Link>
+
+        {/* Header card */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h1 className="text-xl font-bold text-[var(--colour-primary)]">
                 Order #{order.orderNumber}
               </h1>
-              <StatusBadge status={order.status} />
+              <p className="text-xs text-[var(--colour-primary)]/40 mt-1">
+                Placed{' '}
+                {new Date(order.createdAt).toLocaleDateString('en-GB', {
+                  day: 'numeric',
+                  month: 'long',
+                  year: 'numeric',
+                })}
+              </p>
             </div>
-            <p className="text-sm text-[var(--colour-primary)] opacity-40 mt-1">
-              {new Date(order.createdAt).toLocaleDateString('en-GB', {
-                day: 'numeric',
-                month: 'long',
-                year: 'numeric',
-              })}
-            </p>
+            <StatusBadge status={order.status} />
           </div>
 
-          {/* Dispatch banner */}
+          {/* Status banner */}
           {isDispatched ? (
-            <div className="flex items-start gap-3 rounded-[var(--radius-button)] border border-green-200 bg-green-50 p-4">
-              <svg
-                className="w-5 h-5 text-green-600 shrink-0 mt-0.5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M5 13l4 4L19 7"
-                />
+            <div className="mt-4 flex items-start gap-3 rounded-xl bg-green-50 border border-green-100 p-4">
+              <svg className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12" />
               </svg>
               <div>
-                <p className="text-sm font-semibold text-green-800">
-                  Your order has been dispatched
-                </p>
-                <p className="text-xs text-green-700 mt-0.5 opacity-80">
-                  It is on its way to you.
-                  {order.courierName ? ` Courier: ${order.courierName}.` : ''}
+                <p className="text-sm font-semibold text-green-800">Your order has been dispatched</p>
+                <p className="text-xs text-green-700/80 mt-0.5">
+                  It&apos;s on its way to you.{order.courierName ? ` Courier: ${order.courierName}.` : ''}
                 </p>
               </div>
             </div>
           ) : order.status === 'PAID' ? (
-            <div className="flex items-start gap-3 rounded-[var(--radius-button)] border border-[var(--colour-primary)] border-opacity-10 bg-[var(--colour-primary)] bg-opacity-5 p-4">
-              <svg
-                className="w-5 h-5 text-[var(--colour-primary)] opacity-40 shrink-0 mt-0.5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
+            <div className="mt-4 flex items-start gap-3 rounded-xl bg-[var(--colour-primary)]/[0.04] border border-[var(--colour-primary)]/10 p-4">
+              <svg className="w-4 h-4 text-[var(--colour-primary)]/40 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <p className="text-sm text-[var(--colour-primary)] opacity-60">
-                Your order is being prepared
-              </p>
+              <p className="text-sm text-[var(--colour-primary)]/60">Your order is being prepared.</p>
             </div>
           ) : null}
+        </div>
 
-          {/* Items */}
-          <div className="border border-[var(--colour-primary)] border-opacity-10 rounded-[var(--radius-button)] overflow-hidden">
-            <div className="p-4 border-b border-[var(--colour-primary)] border-opacity-10">
-              <h2 className="text-sm font-semibold text-[var(--colour-primary)]">Items</h2>
-            </div>
-            <div className="divide-y divide-[var(--colour-primary)] divide-opacity-10">
-              {order.items.map((item) => (
-                <div key={item.id} className="flex items-center justify-between p-4 gap-4">
-                  <div>
-                    <p className="text-sm font-medium text-[var(--colour-primary)]">{item.name}</p>
-                    <p className="text-xs text-[var(--colour-primary)] opacity-40">
-                      Qty {item.quantity} × {formatPrice(item.pricePence, order.currency)}
-                    </p>
-                  </div>
-                  <span className="text-sm font-semibold text-[var(--colour-primary)] whitespace-nowrap">
-                    {formatPrice(item.pricePence * item.quantity, order.currency)}
-                  </span>
-                </div>
-              ))}
-            </div>
-            <div className="p-4 border-t border-[var(--colour-primary)] border-opacity-10 flex justify-between">
-              <span className="text-sm font-semibold text-[var(--colour-primary)]">Total</span>
-              <span className="text-sm font-semibold text-[var(--colour-primary)]">
-                {formatPrice(order.totalPence, order.currency)}
-              </span>
-            </div>
+        {/* Items */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="px-5 py-4 border-b border-gray-100">
+            <h2 className="text-sm font-semibold text-[var(--colour-primary)]">Items ordered</h2>
           </div>
+          <div className="divide-y divide-gray-100">
+            {order.items.map((item) => (
+              <div key={item.id} className="flex items-center gap-4 px-5 py-4">
+                {item.imageUrl && (
+                  <div className="w-12 h-12 rounded-lg bg-gray-100 overflow-hidden flex-shrink-0">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-[var(--colour-primary)] truncate">{item.name}</p>
+                  <p className="text-xs text-[var(--colour-primary)]/40 mt-0.5">
+                    Qty {item.quantity} · {formatPrice(item.pricePence, order.currency)} each
+                  </p>
+                </div>
+                <span className="text-sm font-semibold text-[var(--colour-primary)] tabular-nums flex-shrink-0">
+                  {formatPrice(item.pricePence * item.quantity, order.currency)}
+                </span>
+              </div>
+            ))}
+          </div>
+          <div className="px-5 py-4 border-t border-gray-100 bg-gray-50/60 flex items-center justify-between">
+            <span className="text-sm font-semibold text-[var(--colour-primary)]">Total</span>
+            <span className="text-sm font-semibold text-[var(--colour-primary)] tabular-nums">
+              {formatPrice(order.totalPence, order.currency)}
+            </span>
+          </div>
+        </div>
 
-          {/* Shipping address */}
-          {order.shippingAddress && (
-            <div className="border border-[var(--colour-primary)] border-opacity-10 rounded-[var(--radius-button)] p-4 space-y-1">
-              <h2 className="text-sm font-semibold text-[var(--colour-primary)] mb-3">
-                Shipping address
-              </h2>
-              <p className="text-sm text-[var(--colour-primary)] opacity-70">
-                {order.shippingAddress.name}
-              </p>
-              <p className="text-sm text-[var(--colour-primary)] opacity-70">
-                {order.shippingAddress.line1}
-              </p>
+        {/* Shipping address */}
+        {order.shippingAddress && (
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+            <h2 className="text-sm font-semibold text-[var(--colour-primary)] mb-4">Shipping address</h2>
+            <address className="not-italic space-y-1">
+              <p className="text-sm text-[var(--colour-primary)]/70">{order.shippingAddress.name}</p>
+              <p className="text-sm text-[var(--colour-primary)]/70">{order.shippingAddress.line1}</p>
               {order.shippingAddress.line2 && (
-                <p className="text-sm text-[var(--colour-primary)] opacity-70">
-                  {order.shippingAddress.line2}
-                </p>
+                <p className="text-sm text-[var(--colour-primary)]/70">{order.shippingAddress.line2}</p>
               )}
-              <p className="text-sm text-[var(--colour-primary)] opacity-70">
+              <p className="text-sm text-[var(--colour-primary)]/70">
                 {order.shippingAddress.city}, {order.shippingAddress.postcode}
               </p>
-              <p className="text-sm text-[var(--colour-primary)] opacity-70">
-                {order.shippingAddress.country}
-              </p>
-            </div>
-          )}
+              <p className="text-sm text-[var(--colour-primary)]/70">{order.shippingAddress.country}</p>
+            </address>
+          </div>
+        )}
 
-          {/* Tracking */}
-          {order.trackingNumber && (
-            <div className="border border-[var(--colour-primary)] border-opacity-10 rounded-[var(--radius-button)] p-4">
-              <h2 className="text-sm font-semibold text-[var(--colour-primary)] mb-3">Tracking</h2>
-              <div className="space-y-2">
-                {order.courierName && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-[var(--colour-primary)] opacity-50">Courier</span>
-                    <span className="text-sm text-[var(--colour-primary)] opacity-70">
-                      {order.courierName}
-                    </span>
-                  </div>
-                )}
+        {/* Tracking */}
+        {order.trackingNumber && (
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+            <h2 className="text-sm font-semibold text-[var(--colour-primary)] mb-4">Tracking</h2>
+            <dl className="space-y-2">
+              {order.courierName && (
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-[var(--colour-primary)] opacity-50">
-                    Tracking number
-                  </span>
-                  <span className="text-sm text-[var(--colour-primary)] opacity-70 font-mono">
-                    {order.trackingNumber}
-                  </span>
+                  <dt className="text-xs text-[var(--colour-primary)]/40">Courier</dt>
+                  <dd className="text-sm text-[var(--colour-primary)]/80">{order.courierName}</dd>
                 </div>
-                {order.trackingUrl && (
-                  <a
-                    href={order.trackingUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm text-[var(--colour-secondary)] hover:opacity-70 transition-opacity"
-                  >
-                    Track package →
-                  </a>
-                )}
+              )}
+              <div className="flex items-center justify-between">
+                <dt className="text-xs text-[var(--colour-primary)]/40">Tracking number</dt>
+                <dd className="text-sm font-mono text-[var(--colour-primary)]/80">{order.trackingNumber}</dd>
               </div>
-            </div>
-          )}
-        </div>
-      </Container>
+            </dl>
+            {order.trackingUrl && (
+              <a
+                href={order.trackingUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-4 flex items-center gap-1.5 text-sm font-medium text-[var(--colour-secondary)] hover:opacity-70 transition-opacity"
+              >
+                Track package
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                </svg>
+              </a>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

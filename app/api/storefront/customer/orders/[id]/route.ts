@@ -1,12 +1,12 @@
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
-import { API_URL, SESSION_COOKIE, buildExpressHeaders } from '../../../_lib/proxy';
+import { SESSION_COOKIE } from '../../../_lib/proxy';
+import { fetchCustomerOrder } from '@/lib/api';
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
     const slug = req.headers.get('x-store-slug') ?? '';
-    const cartToken = req.headers.get('x-cart-token');
 
     const cookieStore = await cookies();
     const token = cookieStore.get(SESSION_COOKIE)?.value;
@@ -15,12 +15,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       return NextResponse.json({ error: 'Unauthenticated' }, { status: 401 });
     }
 
-    const apiRes = await fetch(`${API_URL}/api/storefront/customer/orders/${id}`, {
-      headers: buildExpressHeaders(slug, token, cartToken),
-    });
-
-    const data = await apiRes.json();
-    return NextResponse.json(data, { status: apiRes.status });
+    const order = await fetchCustomerOrder(slug, token, id);
+    if (!order) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    return NextResponse.json(order);
   } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }

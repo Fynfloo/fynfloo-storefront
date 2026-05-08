@@ -4,6 +4,7 @@ export interface ThemeSettings {
   fontFamily: string;
   borderRadius: number;
   buttonStyle: 'rounded' | 'sharp';
+  announcement?: string;
 }
 
 const defaultTheme: ThemeSettings = {
