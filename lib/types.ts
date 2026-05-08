@@ -25,18 +25,26 @@ export interface StorePage {
   layout: Section[];
 }
 
+type StoreSection<TType extends string, TData> = {
+  id: string;
+  type: TType;
+  data: TData;
+  visible?: boolean;
+  variantKey?: string;
+};
+
 export type Section =
-  | { id: string; type: 'hero.basic'; data: HeroBasicData }
-  | { id: string; type: 'commerce.productGrid'; data: ProductGridData }
-  | { id: string; type: 'commerce.categoryGrid'; data: CategoryGridData }
-  | { id: string; type: 'commerce.featuredCarousel'; data: FeaturedCarouselData }
-  | { id: string; type: 'commerce.productHero'; data: ProductHeroData }
-  | { id: string; type: 'commerce.productSpecs'; data: ProductSpecsData }
-  | { id: string; type: 'commerce.relatedProducts'; data: RelatedProductsData }
-  | { id: string; type: 'content.textWithMedia'; data: TextWithMediaData }
-  | { id: string; type: 'content.testimonials'; data: TestimonialsData }
-  | { id: string; type: 'checkout.cartItems'; data: CartItemsData }
-  | { id: string; type: 'checkout.cartSummary'; data: CartSummaryData };
+  | StoreSection<'hero.basic', HeroBasicData>
+  | StoreSection<'commerce.productGrid', ProductGridData>
+  | StoreSection<'commerce.categoryGrid', CategoryGridData>
+  | StoreSection<'commerce.featuredCarousel', FeaturedCarouselData>
+  | StoreSection<'commerce.productHero', ProductHeroData>
+  | StoreSection<'commerce.productSpecs', ProductSpecsData>
+  | StoreSection<'commerce.relatedProducts', RelatedProductsData>
+  | StoreSection<'content.textWithMedia', TextWithMediaData>
+  | StoreSection<'content.testimonials', TestimonialsData>
+  | StoreSection<'checkout.cartItems', CartItemsData>
+  | StoreSection<'checkout.cartSummary', CartSummaryData>;
 
 // ─── Products ─────────────────────────────────────────────────────────────────
 

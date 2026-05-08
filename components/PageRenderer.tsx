@@ -66,6 +66,10 @@ interface SectionRendererProps {
 }
 
 function SectionRenderer({ section, context }: SectionRendererProps) {
+  if (section.visible === false) {
+    return null;
+  }
+
   switch (section.type) {
     case 'hero.basic':
       return <HeroBasic data={section.data} />;
