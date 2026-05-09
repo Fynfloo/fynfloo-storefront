@@ -2,6 +2,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import type { StoreData } from '@/lib/types';
 import { FooterNewsletter } from './FooterNewsletter';
+import { getFirstRegionBlock, getRegionBlocks } from '@/lib/store-regions';
 
 interface FooterProps {
   store: StoreData;
@@ -12,10 +13,21 @@ const PAYSTACK_CURRENCIES = ['NGN', 'GHS', 'KES', 'ZAR'];
 export function Footer({ store }: FooterProps) {
   const year = new Date().getFullYear();
   const isPaystack = PAYSTACK_CURRENCIES.includes(store.currency);
+  const newsletterBlock = getFirstRegionBlock(store, 'footer', 'footer.newsletter');
+  const brandBlock = getFirstRegionBlock(store, 'footer', 'footer.brand');
+  const linkGroups = getRegionBlocks(store, 'footer', 'footer.linkGroup');
+  const legalBlock = getFirstRegionBlock(store, 'legalFooter', 'legal.footer');
+  const newsletterHeading = newsletterBlock?.data.heading ?? 'Stay in the loop';
+  const newsletterBody =
+    newsletterBlock?.data.body ?? 'New arrivals, exclusive offers and more.';
+  const brandBody = brandBlock?.data.body ?? 'Quality products, delivered with care.';
+  const legalCopyright =
+    legalBlock?.data.copyrightText ?? `© ${year} ${store.name}. All rights reserved.`;
+  const showPaymentProvider = legalBlock?.data.showPaymentProvider ?? true;
+  const showPoweredBy = legalBlock?.data.showPoweredBy ?? true;
 
   return (
     <footer className="mt-auto">
-      {/* Newsletter strip */}
       <div className="bg-[var(--colour-primary)] py-14 px-4">
         <div className="mx-auto max-w-7xl sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
@@ -24,20 +36,18 @@ export function Footer({ store }: FooterProps) {
                 className="text-xl font-bold text-white"
                 style={{ fontFamily: 'var(--font-display, var(--font-body))' }}
               >
-                Stay in the loop
+                {newsletterHeading}
               </h3>
-              <p className="mt-1 text-sm text-white/60">New arrivals, exclusive offers and more.</p>
+              <p className="mt-1 text-sm text-white/60">{newsletterBody}</p>
             </div>
             <FooterNewsletter />
           </div>
         </div>
       </div>
 
-      {/* Links section */}
       <div className="bg-white border-t border-[var(--colour-primary)]/8 py-14 px-4">
         <div className="mx-auto max-w-7xl sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 gap-8 md:grid-cols-4 lg:gap-12">
-            {/* Brand */}
             <div className="col-span-2 md:col-span-1 space-y-4">
               {store.logoUrl ? (
                 <Image
@@ -56,104 +66,55 @@ export function Footer({ store }: FooterProps) {
                 </span>
               )}
               <p className="text-sm text-[var(--colour-primary)] opacity-50 leading-relaxed max-w-[200px]">
-                Quality products, delivered with care.
+                {brandBody}
               </p>
-              {/* Social icons */}
-              <div className="flex items-center gap-3 pt-1">
-                <a
-                  href="#"
-                  aria-label="Instagram"
-                  className="w-8 h-8 flex items-center justify-center rounded-full border border-[var(--colour-primary)]/15 text-[var(--colour-primary)] opacity-40 hover:opacity-80 transition-opacity"
-                >
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z" />
-                  </svg>
-                </a>
-                <a
-                  href="#"
-                  aria-label="Facebook"
-                  className="w-8 h-8 flex items-center justify-center rounded-full border border-[var(--colour-primary)]/15 text-[var(--colour-primary)] opacity-40 hover:opacity-80 transition-opacity"
-                >
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-                  </svg>
-                </a>
+            </div>
+
+            {linkGroups.map((group) => (
+              <div key={group.id} className="space-y-4">
+                <h4 className="text-xs uppercase tracking-[0.15em] font-semibold text-[var(--colour-primary)] opacity-40">
+                  {group.data.heading}
+                </h4>
+                <ul className="space-y-3">
+                  {group.data.links.map((link) => (
+                    <li key={`${group.id}-${link.label}`}>
+                      {link.href ? (
+                        <Link
+                          href={link.href}
+                          className="text-sm text-[var(--colour-primary)] opacity-60 hover:opacity-100 transition-opacity"
+                        >
+                          {link.label}
+                        </Link>
+                      ) : (
+                        <span className="text-sm text-[var(--colour-primary)] opacity-40 cursor-default">
+                          {link.label}
+                        </span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
               </div>
-            </div>
-
-            {/* Shop */}
-            <div className="space-y-4">
-              <h4 className="text-xs uppercase tracking-[0.15em] font-semibold text-[var(--colour-primary)] opacity-40">
-                Shop
-              </h4>
-              <ul className="space-y-3">
-                <li>
-                  <Link href="/products" className="text-sm text-[var(--colour-primary)] opacity-60 hover:opacity-100 transition-opacity">
-                    All Products
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/cart" className="text-sm text-[var(--colour-primary)] opacity-60 hover:opacity-100 transition-opacity">
-                    Cart
-                  </Link>
-                </li>
-              </ul>
-            </div>
-
-            {/* Account */}
-            <div className="space-y-4">
-              <h4 className="text-xs uppercase tracking-[0.15em] font-semibold text-[var(--colour-primary)] opacity-40">
-                Account
-              </h4>
-              <ul className="space-y-3">
-                <li>
-                  <Link href="/account/login" className="text-sm text-[var(--colour-primary)] opacity-60 hover:opacity-100 transition-opacity">
-                    Sign in
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/account/signup" className="text-sm text-[var(--colour-primary)] opacity-60 hover:opacity-100 transition-opacity">
-                    Create Account
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/account/orders" className="text-sm text-[var(--colour-primary)] opacity-60 hover:opacity-100 transition-opacity">
-                    Order History
-                  </Link>
-                </li>
-              </ul>
-            </div>
-
-            {/* Help */}
-            <div className="space-y-4">
-              <h4 className="text-xs uppercase tracking-[0.15em] font-semibold text-[var(--colour-primary)] opacity-40">
-                Help
-              </h4>
-              <ul className="space-y-3">
-                <li>
-                  <span className="text-sm text-[var(--colour-primary)] opacity-40 cursor-default">Contact Us</span>
-                </li>
-                <li>
-                  <span className="text-sm text-[var(--colour-primary)] opacity-40 cursor-default">Shipping Policy</span>
-                </li>
-                <li>
-                  <span className="text-sm text-[var(--colour-primary)] opacity-40 cursor-default">Returns</span>
-                </li>
-              </ul>
-            </div>
+            ))}
           </div>
 
-          {/* Bottom bar */}
           <div className="mt-12 pt-8 border-t border-[var(--colour-primary)]/8 flex flex-col sm:flex-row items-center justify-between gap-4">
             <p className="text-xs text-[var(--colour-primary)] opacity-35">
-              © {year} {store.name}. All rights reserved.
+              {legalCopyright}
             </p>
             <div className="flex items-center gap-4">
-              <span className="text-xs text-[var(--colour-primary)] opacity-30">
-                Secure payments by {isPaystack ? 'Paystack' : 'Stripe'}
-              </span>
-              <span className="text-xs text-[var(--colour-primary)] opacity-20">·</span>
-              <span className="text-xs text-[var(--colour-primary)] opacity-30">Powered by Fynfloo</span>
+              {showPaymentProvider && (
+                <span className="text-xs text-[var(--colour-primary)] opacity-30">
+                  Secure payments by {isPaystack ? 'Paystack' : 'Stripe'}
+                </span>
+              )}
+              {showPaymentProvider && showPoweredBy && (
+                <span className="text-xs text-[var(--colour-primary)] opacity-20">·</span>
+              )}
+              {showPoweredBy && (
+                <span className="text-xs text-[var(--colour-primary)] opacity-30">
+                  Powered by Fynfloo
+                </span>
+              )}
             </div>
           </div>
         </div>
