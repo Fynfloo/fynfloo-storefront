@@ -5,8 +5,10 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { StoreData, CustomerProfile } from '@/lib/types';
+import { resolveStorefrontLink } from '@/lib/navigation';
 import { fetchCart, customerLogout } from '@/lib/storefront-client';
 import { getFirstRegionBlock } from '@/lib/store-regions';
+import { StoreLink } from './StoreLink';
 
 interface NavProps {
   store: StoreData;
@@ -32,10 +34,7 @@ export function Nav({ store, slug, profile }: NavProps) {
   const announcementBlock = getFirstRegionBlock(store, 'announcement', 'announcement.message');
   const navigationBlock = getFirstRegionBlock(store, 'header', 'header.navigation');
   const announcement = announcementBlock?.data.text ?? store.themeSettings.announcement;
-  const navigationLinks =
-    navigationBlock?.data.links.filter((link) => Boolean(link.href)) ?? [
-      { label: 'Shop', href: '/products' },
-    ];
+  const navigationLinks = navigationBlock?.data.links ?? [{ label: 'Shop', href: '/products' }];
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -103,15 +102,22 @@ export function Nav({ store, slug, profile }: NavProps) {
 
             {/* Desktop nav links */}
             <nav className="hidden md:flex items-center gap-8 flex-1 justify-center">
-              {navigationLinks.map((link) => (
-                <Link
-                  key={`${link.label}-${link.href}`}
-                  href={link.href ?? '/'}
-                  className="text-sm font-medium text-[var(--colour-primary)] opacity-60 hover:opacity-100 transition-opacity"
-                >
-                  {link.label}
-                </Link>
-              ))}
+              {navigationLinks.map((link) => {
+                const resolved = resolveStorefrontLink(link);
+
+                if (!resolved) return null;
+
+                return (
+                  <StoreLink
+                    key={`${link.label}-${resolved.href}`}
+                    href={resolved.href}
+                    external={resolved.external}
+                    className="text-sm font-medium text-[var(--colour-primary)] opacity-60 hover:opacity-100 transition-opacity"
+                  >
+                    {link.label}
+                  </StoreLink>
+                );
+              })}
             </nav>
 
             {/* Right actions */}
@@ -233,19 +239,28 @@ export function Nav({ store, slug, profile }: NavProps) {
         {menuOpen && (
           <div className="md:hidden border-t border-[var(--colour-primary)]/10 bg-white">
             <div className="mx-auto max-w-7xl px-4 sm:px-6 py-4 space-y-0">
-              {navigationLinks.map((link) => (
-                <Link
-                  key={`mobile-${link.label}-${link.href}`}
-                  href={link.href ?? '/'}
-                  onClick={() => setMenuOpen(false)}
-                  className="flex items-center justify-between py-3.5 text-sm font-medium text-[var(--colour-primary)] border-b border-[var(--colour-primary)]/8"
-                >
-                  {link.label}
-                  <svg className="w-4 h-4 opacity-30" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-                  </svg>
-                </Link>
-              ))}
+              {navigationLinks.map((link) => {
+                const resolved = resolveStorefrontLink(link);
+
+                if (!resolved) return null;
+
+                return (
+                  <StoreLink
+                    key={`mobile-${link.label}-${resolved.href}`}
+                    href={resolved.href}
+                    external={resolved.external}
+                    onClick={() => setMenuOpen(false)}
+                    className="flex items-center justify-between py-3.5 text-sm font-medium text-[var(--colour-primary)] border-b border-[var(--colour-primary)]/8"
+                  >
+                    <>
+                      {link.label}
+                      <svg className="w-4 h-4 opacity-30" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                      </svg>
+                    </>
+                  </StoreLink>
+                );
+              })}
 
               {!isAuthenticated ? (
                 <>

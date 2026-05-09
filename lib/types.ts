@@ -35,12 +35,47 @@ type StoreSection<TType extends string, TData> = {
   variantKey?: string;
 };
 
-export type CapabilityKey = 'core-commerce';
+export type CapabilityKey =
+  | 'core-site'
+  | 'content-pages'
+  | 'catalog'
+  | 'cart'
+  | 'checkout'
+  | 'orders'
+  | 'discounts'
+  | 'shipping-rates'
+  | 'digital-downloads'
+  | 'service-hire';
+
+export type SystemPageKey =
+  | 'home'
+  | 'products'
+  | 'cart'
+  | 'account.login'
+  | 'account.signup'
+  | 'account.orders'
+  | 'account.profile'
+  | 'checkout.success';
+
+export type LinkTarget =
+  | { type: 'path'; path: string }
+  | { type: 'systemPage'; page: SystemPageKey }
+  | { type: 'contentPage'; path: string }
+  | { type: 'product'; handle: string }
+  | { type: 'collection'; handle: string }
+  | { type: 'external'; url: string }
+  | { type: 'email'; email: string; subject?: string }
+  | { type: 'phone'; phone: string };
+
+export type ActionTarget =
+  | { type: 'link'; target: LinkTarget }
+  | { type: 'scroll'; sectionId: string };
 
 export type StorefrontLink = {
   label: string;
   href: string | null;
   external?: boolean;
+  target?: LinkTarget | null;
 };
 
 export type SocialPlatform = 'instagram' | 'facebook' | 'x' | 'tiktok';
@@ -267,8 +302,10 @@ export interface HeroBasicData {
   subtitle?: string;
   imageUrl?: string;
   primaryCtaLabel?: string;
+  primaryCta?: ActionTarget;
   primaryCtaHref?: string;
   secondaryCtaLabel?: string;
+  secondaryCta?: ActionTarget;
   secondaryCtaHref?: string;
 }
 
@@ -279,6 +316,7 @@ export interface FeaturedCarouselData {
   promoHeading?: string;
   promoSubheading?: string;
   promoCtaLabel?: string;
+  promoCta?: ActionTarget;
   promoCtaHref?: string;
 }
 

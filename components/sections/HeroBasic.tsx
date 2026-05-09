@@ -1,9 +1,10 @@
 'use client';
 
-import Link from 'next/link';
 import Image from 'next/image';
 import { motion, SlideLeft, fadeUp, fadeUpSlow, staggerParent, staggerParentFast } from '@/components/ui/Motion';
 import type { HeroBasicData } from '@/lib/types';
+import { StoreLink } from '@/components/ui/StoreLink';
+import { resolveActionTarget, resolveHref } from '@/lib/navigation';
 
 interface HeroBasicProps {
   data: HeroBasicData;
@@ -17,10 +18,15 @@ export function HeroBasic({ data }: HeroBasicProps) {
     subtitle,
     imageUrl,
     primaryCtaLabel,
+    primaryCta,
     primaryCtaHref,
     secondaryCtaLabel,
+    secondaryCta,
     secondaryCtaHref,
   } = data;
+
+  const primaryLink = resolveActionTarget(primaryCta) ?? resolveHref(primaryCtaHref);
+  const secondaryLink = resolveActionTarget(secondaryCta) ?? resolveHref(secondaryCtaHref);
 
   if (variant === 'fullbleed') {
     return (
@@ -75,24 +81,26 @@ export function HeroBasic({ data }: HeroBasicProps) {
               className="mt-10 flex flex-wrap items-center justify-center gap-4"
               variants={fadeUp}
             >
-              {primaryCtaLabel && primaryCtaHref && (
-                <Link
-                  href={primaryCtaHref}
+              {primaryCtaLabel && primaryLink && (
+                <StoreLink
+                  href={primaryLink.href}
+                  external={primaryLink.external}
                   className="inline-flex items-center justify-center px-8 py-3.5 text-sm font-semibold bg-white text-gray-900 rounded-[var(--radius-button)] hover:bg-white/90 transition-colors"
                 >
                   {primaryCtaLabel}
-                </Link>
+                </StoreLink>
               )}
-              {secondaryCtaLabel && secondaryCtaHref && (
-                <Link
-                  href={secondaryCtaHref}
+              {secondaryCtaLabel && secondaryLink && (
+                <StoreLink
+                  href={secondaryLink.href}
+                  external={secondaryLink.external}
                   className="inline-flex items-center gap-2 text-sm font-semibold text-white/80 hover:text-white transition-colors"
                 >
                   {secondaryCtaLabel}
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
                   </svg>
-                </Link>
+                </StoreLink>
               )}
             </motion.div>
           )}
@@ -148,24 +156,26 @@ export function HeroBasic({ data }: HeroBasicProps) {
                 className="mt-10 flex flex-wrap items-center gap-4"
                 variants={fadeUp}
               >
-                {primaryCtaLabel && primaryCtaHref && (
-                  <Link
-                    href={primaryCtaHref}
+                {primaryCtaLabel && primaryLink && (
+                  <StoreLink
+                    href={primaryLink.href}
+                    external={primaryLink.external}
                     className="inline-flex items-center justify-center px-8 py-3.5 text-sm font-semibold uppercase tracking-widest bg-[var(--colour-primary)] text-white rounded-[var(--radius-button)] hover:opacity-80 transition-opacity"
                   >
                     {primaryCtaLabel}
-                  </Link>
+                  </StoreLink>
                 )}
-                {secondaryCtaLabel && secondaryCtaHref && (
-                  <Link
-                    href={secondaryCtaHref}
+                {secondaryCtaLabel && secondaryLink && (
+                  <StoreLink
+                    href={secondaryLink.href}
+                    external={secondaryLink.external}
                     className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--colour-primary)] hover:opacity-60 transition-opacity"
                   >
                     {secondaryCtaLabel}
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
                     </svg>
-                  </Link>
+                  </StoreLink>
                 )}
               </motion.div>
             )}

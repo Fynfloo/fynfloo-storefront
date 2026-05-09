@@ -1,8 +1,9 @@
-import Link from 'next/link';
 import Image from 'next/image';
 import type { StoreData } from '@/lib/types';
+import { resolveStorefrontLink } from '@/lib/navigation';
 import { FooterNewsletter } from './FooterNewsletter';
 import { getFirstRegionBlock, getRegionBlocks } from '@/lib/store-regions';
+import { StoreLink } from './StoreLink';
 
 interface FooterProps {
   store: StoreData;
@@ -78,18 +79,27 @@ export function Footer({ store }: FooterProps) {
                 <ul className="space-y-3">
                   {group.data.links.map((link) => (
                     <li key={`${group.id}-${link.label}`}>
-                      {link.href ? (
-                        <Link
-                          href={link.href}
-                          className="text-sm text-[var(--colour-primary)] opacity-60 hover:opacity-100 transition-opacity"
-                        >
-                          {link.label}
-                        </Link>
-                      ) : (
-                        <span className="text-sm text-[var(--colour-primary)] opacity-40 cursor-default">
-                          {link.label}
-                        </span>
-                      )}
+                      {(() => {
+                        const resolved = resolveStorefrontLink(link);
+
+                        if (!resolved) {
+                          return (
+                            <span className="text-sm text-[var(--colour-primary)] opacity-40 cursor-default">
+                              {link.label}
+                            </span>
+                          );
+                        }
+
+                        return (
+                          <StoreLink
+                            href={resolved.href}
+                            external={resolved.external}
+                            className="text-sm text-[var(--colour-primary)] opacity-60 hover:opacity-100 transition-opacity"
+                          >
+                            {link.label}
+                          </StoreLink>
+                        );
+                      })()}
                     </li>
                   ))}
                 </ul>
