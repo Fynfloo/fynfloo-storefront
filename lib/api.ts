@@ -1,5 +1,7 @@
 // lib/api.ts
+import { cookies } from 'next/headers';
 import type { StoreData, StorePage, Product, CustomerProfile, Order, OrderDetail } from '@/lib/types';
+import { STOREFRONT_PREVIEW_COOKIE } from '@/app/api/storefront/_lib/proxy';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080';
 
@@ -36,10 +38,33 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
   return res.json() as Promise<T>;
 }
 
+async function getStorefrontRenderFetchOptions(): Promise<
+  Pick<RequestOptions, 'headers' | 'cache' | 'next'>
+> {
+  const cookieStore = await cookies();
+  const previewToken = cookieStore.get(STOREFRONT_PREVIEW_COOKIE)?.value ?? null;
+
+  if (!previewToken) {
+    return {
+      headers: {},
+      next: { revalidate: 60 },
+    };
+  }
+
+  return {
+    headers: {
+      'X-Storefront-Preview': previewToken,
+    },
+    cache: 'no-store',
+  };
+}
+
 export async function fetchStoreData(slug: string): Promise<StoreData | null> {
   try {
+    const renderFetchOptions = await getStorefrontRenderFetchOptions();
+
     return await apiFetch<StoreData>(`/api/storefront/stores/${slug}`, {
-      next: { revalidate: 60 },
+      ...renderFetchOptions,
     });
   } catch {
     return null;
@@ -48,9 +73,11 @@ export async function fetchStoreData(slug: string): Promise<StoreData | null> {
 
 export async function fetchStorePage(slug: string, path: string): Promise<StorePage | null> {
   try {
+    const renderFetchOptions = await getStorefrontRenderFetchOptions();
+
     return await apiFetch<StorePage>(`/api/storefront/pages?path=${encodeURIComponent(path)}`, {
       slug,
-      next: { revalidate: 60 },
+      ...renderFetchOptions,
     });
   } catch {
     return null;
