@@ -1,4 +1,6 @@
 // components/sections/Testimonials.tsx
+'use client';
+
 import type { TestimonialsData } from '@/lib/types';
 import { Container } from '@/components/ui/Container';
 import { FadeUp, StaggerList, StaggerItem } from '@/components/ui/Motion';

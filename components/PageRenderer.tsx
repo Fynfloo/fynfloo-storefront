@@ -1,5 +1,6 @@
 // components/PageRenderer.tsx
 import type { Section, Product, StoreData } from '@/lib/types';
+import { getSiteEditorSectionNodeId } from '@/lib/site-editor-preview';
 import {
   HeroBasic,
   CategoryGrid,
@@ -11,6 +12,7 @@ import {
   Testimonials,
   TextWithMedia,
 } from './sections';
+import { PreviewSectionShell } from '@/components/editor/SiteEditorPreviewProvider';
 
 export interface PageContext {
   storeId: string;
@@ -53,8 +55,14 @@ interface PageRendererProps {
 export function PageRenderer({ sections, context = DEFAULT_CONTEXT }: PageRendererProps) {
   return (
     <>
-      {sections.map((section) => (
-        <SectionRenderer key={section.id} section={section} context={context} />
+      {sections.map((section, index) => (
+        <PreviewSectionShell
+          key={section.id}
+          nodeId={getSiteEditorSectionNodeId(section, index)}
+          section={section}
+        >
+          <SectionRenderer section={section} context={context} />
+        </PreviewSectionShell>
       ))}
     </>
   );

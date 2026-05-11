@@ -4,6 +4,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { CartItemsData, CartSummaryData, CartResponse } from '@/lib/types';
 import { fetchCart, updateCartItem, removeCartItem } from '@/lib/storefront-client';
+import { PreviewSelectableBox } from '@/components/editor/SiteEditorPreviewProvider';
 import { CartItems } from './CartItems';
 import { CartSummary } from './CartSummary';
 
@@ -11,9 +12,17 @@ interface CartPageClientProps {
   slug: string;
   cartItemsData: CartItemsData;
   cartSummaryData: CartSummaryData;
+  cartItemsNodeId: string;
+  cartSummaryNodeId: string;
 }
 
-export function CartPageClient({ slug, cartItemsData, cartSummaryData }: CartPageClientProps) {
+export function CartPageClient({
+  slug,
+  cartItemsData,
+  cartSummaryData,
+  cartItemsNodeId,
+  cartSummaryNodeId,
+}: CartPageClientProps) {
   const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
@@ -119,24 +128,28 @@ export function CartPageClient({ slug, cartItemsData, cartSummaryData }: CartPag
 
   return (
     <>
-      <CartItems
-        data={cartItemsData}
-        slug={slug}
-        cart={cart}
-        isLoading={isLoading}
-        onQuantityChange={(
-          productId,
-          quantity,
-          variantId, // ← added variantId
-        ) => updateMutation.mutate({ productId, quantity, variantId })}
-        onRemove={(
-          productId,
-          variantId, // ← added variantId
-        ) => removeMutation.mutate({ productId, variantId })}
-        isPending={updateMutation.isPending || removeMutation.isPending}
-        pendingItemId={pendingItemId} // ← renamed from pendingProductId
-      />
-      <CartSummary data={cartSummaryData} slug={slug} cart={cart} />
+      <PreviewSelectableBox nodeId={cartItemsNodeId}>
+        <CartItems
+          data={cartItemsData}
+          slug={slug}
+          cart={cart}
+          isLoading={isLoading}
+          onQuantityChange={(
+            productId,
+            quantity,
+            variantId, // ← added variantId
+          ) => updateMutation.mutate({ productId, quantity, variantId })}
+          onRemove={(
+            productId,
+            variantId, // ← added variantId
+          ) => removeMutation.mutate({ productId, variantId })}
+          isPending={updateMutation.isPending || removeMutation.isPending}
+          pendingItemId={pendingItemId} // ← renamed from pendingProductId
+        />
+      </PreviewSelectableBox>
+      <PreviewSelectableBox nodeId={cartSummaryNodeId}>
+        <CartSummary data={cartSummaryData} slug={slug} cart={cart} />
+      </PreviewSelectableBox>
     </>
   );
 }

@@ -1,5 +1,6 @@
 // app/(store)/cart/page.tsx
 import { resolveStorePage, findSection } from '@/lib/page';
+import { getSiteEditorSectionNodeId } from '@/lib/site-editor-preview';
 import { CartPageClient } from '@/components/sections/CartPageClient';
 import { Metadata } from 'next';
 
@@ -23,6 +24,16 @@ export default async function CartPage() {
       slug={slug}
       cartItemsData={cartItemsSection?.data ?? { showThumbnails: true, showLineTotals: true }}
       cartSummaryData={cartSummarySection?.data ?? { showDiscountCode: true }}
+      cartItemsNodeId={
+        cartItemsSection
+          ? getSiteEditorSectionNodeId(cartItemsSection, 0)
+          : 'section:0'
+      }
+      cartSummaryNodeId={
+        cartSummarySection
+          ? getSiteEditorSectionNodeId(cartSummarySection, 1)
+          : 'section:1'
+      }
     />
   );
 }

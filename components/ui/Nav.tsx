@@ -9,6 +9,10 @@ import { resolveStorefrontLink } from '@/lib/navigation';
 import { fetchCart, customerLogout } from '@/lib/storefront-client';
 import { getFirstRegionBlock } from '@/lib/store-regions';
 import { StoreLink } from './StoreLink';
+import {
+  PreviewSelectableBox,
+  useSiteEditorPreviewStore,
+} from '@/components/editor/SiteEditorPreviewProvider';
 
 interface NavProps {
   store: StoreData;
@@ -17,6 +21,7 @@ interface NavProps {
 }
 
 export function Nav({ store, slug, profile }: NavProps) {
+  const previewStore = useSiteEditorPreviewStore(store);
   const [menuOpen, setMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [announcementVisible, setAnnouncementVisible] = useState(true);
@@ -31,9 +36,13 @@ export function Nav({ store, slug, profile }: NavProps) {
 
   const isAuthenticated = profile !== null;
   const cartCount = cartData?.cart.items.reduce((sum, item) => sum + item.quantity, 0) ?? 0;
-  const announcementBlock = getFirstRegionBlock(store, 'announcement', 'announcement.message');
-  const navigationBlock = getFirstRegionBlock(store, 'header', 'header.navigation');
-  const announcement = announcementBlock?.data.text ?? store.themeSettings.announcement;
+  const announcementBlock = getFirstRegionBlock(
+    previewStore,
+    'announcement',
+    'announcement.message',
+  );
+  const navigationBlock = getFirstRegionBlock(previewStore, 'header', 'header.navigation');
+  const announcement = announcementBlock?.data.text ?? previewStore.themeSettings.announcement;
   const navigationLinks = navigationBlock?.data.links ?? [{ label: 'Shop', href: '/products' }];
 
   useEffect(() => {
@@ -61,30 +70,33 @@ export function Nav({ store, slug, profile }: NavProps) {
     <div className="sticky top-0 z-50 w-full">
       {/* Announcement bar */}
       {announcement && announcementVisible && (
-        <div className="relative bg-[var(--colour-primary)] py-2.5 px-10 text-center">
-          <p className="text-xs font-medium tracking-wide text-white">{announcement}</p>
-          <button
-            onClick={() => setAnnouncementVisible(false)}
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-white/60 hover:text-white transition-colors"
-            aria-label="Dismiss announcement"
-          >
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
+        <PreviewSelectableBox nodeId="shared:announcement">
+          <div className="relative bg-[var(--colour-primary)] py-2.5 px-10 text-center">
+            <p className="text-xs font-medium tracking-wide text-white">{announcement}</p>
+            <button
+              onClick={() => setAnnouncementVisible(false)}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-white/60 hover:text-white transition-colors"
+              aria-label="Dismiss announcement"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </PreviewSelectableBox>
       )}
 
       {/* Main header */}
-      <header className="w-full border-b border-[var(--colour-primary)]/10 bg-white/95 backdrop-blur-md">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex h-16 items-center justify-between gap-8">
+      <PreviewSelectableBox nodeId="shared:header">
+        <header className="w-full border-b border-[var(--colour-primary)]/10 bg-white/95 backdrop-blur-md">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="flex h-16 items-center justify-between gap-8">
             {/* Logo */}
-            <Link href="/" className="flex-shrink-0 hover:opacity-70 transition-opacity" aria-label={store.name}>
-              {store.logoUrl ? (
+            <Link href="/" className="flex-shrink-0 hover:opacity-70 transition-opacity" aria-label={previewStore.name}>
+              {previewStore.logoUrl ? (
                 <Image
-                  src={store.logoUrl}
-                  alt={store.name}
+                  src={previewStore.logoUrl}
+                  alt={previewStore.name}
                   width={120}
                   height={40}
                   className="h-8 w-auto object-contain"
@@ -95,7 +107,7 @@ export function Nav({ store, slug, profile }: NavProps) {
                   className="text-lg font-bold tracking-tight text-[var(--colour-primary)]"
                   style={{ fontFamily: 'var(--font-display, var(--font-body))' }}
                 >
-                  {store.name}
+                  {previewStore.name}
                 </span>
               )}
             </Link>
@@ -232,12 +244,12 @@ export function Nav({ store, slug, profile }: NavProps) {
                 )}
               </button>
             </div>
+            </div>
           </div>
-        </div>
 
-        {/* Mobile menu */}
-        {menuOpen && (
-          <div className="md:hidden border-t border-[var(--colour-primary)]/10 bg-white">
+          {/* Mobile menu */}
+          {menuOpen && (
+            <div className="md:hidden border-t border-[var(--colour-primary)]/10 bg-white">
             <div className="mx-auto max-w-7xl px-4 sm:px-6 py-4 space-y-0">
               {navigationLinks.map((link) => {
                 const resolved = resolveStorefrontLink(link);
@@ -321,9 +333,10 @@ export function Nav({ store, slug, profile }: NavProps) {
                 </>
               )}
             </div>
-          </div>
-        )}
-      </header>
+            </div>
+          )}
+        </header>
+      </PreviewSelectableBox>
     </div>
   );
 }

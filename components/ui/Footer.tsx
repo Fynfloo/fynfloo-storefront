@@ -1,9 +1,12 @@
+'use client';
+
 import Image from 'next/image';
 import type { StoreData } from '@/lib/types';
 import { resolveStorefrontLink } from '@/lib/navigation';
 import { FooterNewsletter } from './FooterNewsletter';
 import { getFirstRegionBlock, getRegionBlocks } from '@/lib/store-regions';
 import { StoreLink } from './StoreLink';
+import { useSiteEditorPreviewStore } from '@/components/editor/SiteEditorPreviewProvider';
 
 interface FooterProps {
   store: StoreData;
@@ -12,18 +15,19 @@ interface FooterProps {
 const PAYSTACK_CURRENCIES = ['NGN', 'GHS', 'KES', 'ZAR'];
 
 export function Footer({ store }: FooterProps) {
+  const previewStore = useSiteEditorPreviewStore(store);
   const year = new Date().getFullYear();
-  const isPaystack = PAYSTACK_CURRENCIES.includes(store.currency);
-  const newsletterBlock = getFirstRegionBlock(store, 'footer', 'footer.newsletter');
-  const brandBlock = getFirstRegionBlock(store, 'footer', 'footer.brand');
-  const linkGroups = getRegionBlocks(store, 'footer', 'footer.linkGroup');
-  const legalBlock = getFirstRegionBlock(store, 'legalFooter', 'legal.footer');
+  const isPaystack = PAYSTACK_CURRENCIES.includes(previewStore.currency);
+  const newsletterBlock = getFirstRegionBlock(previewStore, 'footer', 'footer.newsletter');
+  const brandBlock = getFirstRegionBlock(previewStore, 'footer', 'footer.brand');
+  const linkGroups = getRegionBlocks(previewStore, 'footer', 'footer.linkGroup');
+  const legalBlock = getFirstRegionBlock(previewStore, 'legalFooter', 'legal.footer');
   const newsletterHeading = newsletterBlock?.data.heading ?? 'Stay in the loop';
   const newsletterBody =
     newsletterBlock?.data.body ?? 'New arrivals, exclusive offers and more.';
   const brandBody = brandBlock?.data.body ?? 'Quality products, delivered with care.';
   const legalCopyright =
-    legalBlock?.data.copyrightText ?? `© ${year} ${store.name}. All rights reserved.`;
+    legalBlock?.data.copyrightText ?? `© ${year} ${previewStore.name}. All rights reserved.`;
   const showPaymentProvider = legalBlock?.data.showPaymentProvider ?? true;
   const showPoweredBy = legalBlock?.data.showPoweredBy ?? true;
 
@@ -50,10 +54,10 @@ export function Footer({ store }: FooterProps) {
         <div className="mx-auto max-w-7xl sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 gap-8 md:grid-cols-4 lg:gap-12">
             <div className="col-span-2 md:col-span-1 space-y-4">
-              {store.logoUrl ? (
+              {previewStore.logoUrl ? (
                 <Image
-                  src={store.logoUrl}
-                  alt={store.name}
+                  src={previewStore.logoUrl}
+                  alt={previewStore.name}
                   width={100}
                   height={32}
                   className="h-7 w-auto object-contain"
@@ -63,7 +67,7 @@ export function Footer({ store }: FooterProps) {
                   className="block text-base font-bold text-[var(--colour-primary)]"
                   style={{ fontFamily: 'var(--font-display, var(--font-body))' }}
                 >
-                  {store.name}
+                  {previewStore.name}
                 </span>
               )}
               <p className="text-sm text-[var(--colour-primary)] opacity-50 leading-relaxed max-w-[200px]">

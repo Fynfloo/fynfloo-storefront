@@ -6,6 +6,7 @@ import { fetchStoreData, fetchCustomerProfile } from '@/lib/api';
 import { SESSION_COOKIE } from '@/app/api/storefront/_lib/proxy';
 import { Nav } from '@/components/ui/Nav';
 import { Footer } from '@/components/ui/Footer';
+import { PreviewSelectableBox } from '@/components/editor/SiteEditorPreviewProvider';
 import { Providers } from './providers';
 import { redirect } from 'next/navigation';
 
@@ -56,7 +57,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <Providers>
           {showChrome && <Nav store={store} slug={slug} profile={profile} />}
           <main className="flex-1">{children}</main>
-          {showChrome && <Footer store={store} />}
+          {showChrome && (
+            <PreviewSelectableBox nodeId="shared:footer">
+              <Footer store={store} />
+            </PreviewSelectableBox>
+          )}
         </Providers>
       </body>
     </html>

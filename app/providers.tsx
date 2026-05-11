@@ -2,6 +2,7 @@
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useState } from 'react';
+import { SiteEditorPreviewProvider } from '@/components/editor/SiteEditorPreviewProvider';
 
 export function Providers({ children }: { children: React.ReactNode }) {
   // useState ensures one QueryClient per browser session,
@@ -19,5 +20,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
       }),
   );
 
-  return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
+  return (
+    <QueryClientProvider client={queryClient}>
+      <SiteEditorPreviewProvider>{children}</SiteEditorPreviewProvider>
+    </QueryClientProvider>
+  );
 }

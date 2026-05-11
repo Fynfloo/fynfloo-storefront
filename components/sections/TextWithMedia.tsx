@@ -1,3 +1,5 @@
+'use client';
+
 import Image from 'next/image';
 import type { TextWithMediaData } from '@/lib/types';
 import { Container } from '@/components/ui/Container';
